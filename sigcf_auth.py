@@ -2,6 +2,8 @@
 import streamlit as st
 
 LOGO_URL = "https://i.postimg.cc/Y9X7ddnb/LOGO-BP.jpg"
+BG_URL = "https://media.bio.site/sites/32a25c2c-d6fa-4dfc-bdc2-27e4d35d7ea2/AhS9mKiQxFRXAyMBdXDzEG.jpg"
+INSTAGRAM_URL = "https://www.instagram.com/fazendasantaverginia"
 SESSION_KEY = "sigcf_auth"
 
 
@@ -16,12 +18,16 @@ def exigir_acesso(titulo: str, subtitulo: str = "Acesso restrito — SIGCF Santa
         """
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&display=swap');
-        [data-testid="stAppViewContainer"]{background:#0a1409;}
+        .stApp{
+         background:linear-gradient(rgba(10,20,9,0.82),rgba(10,20,9,0.92)),
+         url('__BG__') center center/cover no-repeat fixed!important;}
+        [data-testid="stAppViewContainer"]{background:transparent!important;}
         h1,h2,p,label{color:#e8edd0;}
         h1{font-family:'Barlow Condensed',sans-serif;}
         .logo-box{background:#fff;border-radius:10px;padding:8px 12px;display:inline-block;}
+        .insta-link{color:#6fcf60!important;text-decoration:none;font-weight:600;}
         </style>
-        """,
+        """.replace("__BG__", BG_URL),
         unsafe_allow_html=True,
     )
     col_logo, col_titulo = st.columns([1, 4])
@@ -30,6 +36,12 @@ def exigir_acesso(titulo: str, subtitulo: str = "Acesso restrito — SIGCF Santa
     with col_titulo:
         st.title(titulo)
         st.caption(subtitulo)
+        st.markdown(
+            f'<p style="margin:4px 0 0;font-size:13px;">'
+            f'<a class="insta-link" href="{INSTAGRAM_URL}" target="_blank" rel="noopener">'
+            f'📷 @fazendasantaverginia</a></p>',
+            unsafe_allow_html=True,
+        )
 
     pin = st.text_input("PIN de acesso", type="password", key="sigcf_login_pin")
     if st.button("Entrar", type="primary", key="sigcf_login_btn"):

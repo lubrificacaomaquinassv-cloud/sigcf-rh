@@ -14,6 +14,8 @@ st.set_page_config(
 )
 
 LOGO_URL = "https://i.postimg.cc/Y9X7ddnb/LOGO-BP.jpg"
+BG_URL = "https://media.bio.site/sites/32a25c2c-d6fa-4dfc-bdc2-27e4d35d7ea2/AhS9mKiQxFRXAyMBdXDzEG.jpg"
+INSTAGRAM_URL = "https://www.instagram.com/fazendasantaverginia"
 TABELA = "rh_justificativa_faltas"
 DIAS_UTEIS_MES = 22
 
@@ -53,9 +55,13 @@ exigir_acesso("Hub RH Santa Virgínia")
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&display=swap');
-[data-testid="stAppViewContainer"]{background:#0a1409;}
+.stApp{
+ background:linear-gradient(rgba(10,20,9,0.78),rgba(10,20,9,0.90)),
+ url('__BG__') center center/cover no-repeat fixed!important;}
+[data-testid="stAppViewContainer"]{background:transparent!important;}
 [data-testid="stSidebar"]{display:none;}
-[data-testid="stHeader"]{background:#0a1409;}
+[data-testid="stHeader"]{background:rgba(10,20,9,0.55)!important;}
+.block-container{background:transparent!important;}
 h1,h2,h3,h4,p,span,label{color:#e8edd0;}
 h1{font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;}
 .stCaption,[data-testid="stCaptionContainer"] p{color:#8aab80!important;}
@@ -63,8 +69,8 @@ h1{font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;}
  letter-spacing:2px;text-transform:uppercase;color:#8aab80;
  border-left:4px solid #4a9e3f;padding-left:10px;margin:8px 0 12px;}
 .logo-box{background:#ffffff;border-radius:10px;padding:8px 12px;display:inline-block;}
-.ctx-box{background:#0d180c;border:1px solid #1e2e1c;border-radius:12px;padding:14px 16px;margin-bottom:12px;}
-.hub-card{background:#111c10;border:1px solid #1e2e1c;border-radius:14px;padding:18px 14px;
+.ctx-box{background:rgba(13,24,12,0.94);border:1px solid #1e2e1c;border-radius:12px;padding:14px 16px;margin-bottom:12px;}
+.hub-card{background:rgba(17,28,16,0.92);border:1px solid #1e2e1c;border-radius:14px;padding:18px 14px;
  text-align:center;min-height:118px;transition:border-color .2s;}
 .hub-card.active{border-color:#4a9e3f;border-top:3px solid #4a9e3f;}
 .hub-card.soon{opacity:.55;border-style:dashed;}
@@ -75,6 +81,8 @@ h1{font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;}
  display:inline-block;padding:3px 10px;border-radius:10px;}
 .hub-card.active .tag{background:#1a3a18;color:#6fcf60;border:1px solid #4a9e3f;}
 .hub-card.soon .tag{background:#1a1a10;color:#8aab80;border:1px solid #3a4a38;}
+.insta-link{color:#6fcf60!important;text-decoration:none;font-weight:600;}
+.insta-link:hover{color:#9fe790!important;text-decoration:underline;}
 
 .stTextInput input,.stNumberInput input,.stTextArea textarea,
 [data-testid="stDateInput"] input{
@@ -94,12 +102,12 @@ div[data-baseweb="popover"] li{color:#1a2818!important;}
 [data-testid="stNumberInput"] button{
  background:#cdd9c4!important;border-color:#4a6644!important;color:#1a2818!important;}
 [data-testid="stForm"]{
- background:#0d180c!important;border:1px solid #1e2e1c!important;
+ background:rgba(13,24,12,0.94)!important;border:1px solid #1e2e1c!important;
  border-radius:12px;padding:12px 16px;}
-div[data-testid="stMetric"]{background:#0d180c;border:1px solid #1e2e1c;border-radius:10px;padding:10px 14px;}
+div[data-testid="stMetric"]{background:rgba(13,24,12,0.94);border:1px solid #1e2e1c;border-radius:10px;padding:10px 14px;}
 div[data-testid="stMetric"] label{color:#8aab80!important;}
 div[data-testid="stMetricValue"]{color:#6fcf60!important;font-family:'Barlow Condensed',sans-serif;}
-.stTabs [data-baseweb="tab-list"]{background:#0d180c;border-bottom:1px solid #1e2e1c;gap:8px;}
+.stTabs [data-baseweb="tab-list"]{background:rgba(13,24,12,0.94);border-bottom:1px solid #1e2e1c;gap:8px;}
 .stTabs [data-baseweb="tab"]{
  color:#8aab80!important;font-family:'Barlow Condensed',sans-serif;font-weight:600;}
 .stTabs [aria-selected="true"]{color:#e8edd0!important;border-bottom-color:#4a9e3f!important;}
@@ -111,7 +119,7 @@ div[data-testid="stCheckbox"] label span{color:#e8edd0!important;}
  text-transform:uppercase;border-radius:8px;}
 .stButton button:hover,[data-testid="stFormSubmitButton"] button:hover{background:#3d8534!important;}
 </style>
-""", unsafe_allow_html=True)
+""".replace("__BG__", BG_URL), unsafe_allow_html=True)
 
 
 def dark_table(df, height=320):
@@ -277,6 +285,12 @@ with col_logo:
 with col_titulo:
     st.title("Hub RH Santa Virgínia")
     st.caption("SIGCF — Módulo Recursos Humanos · substitui bio.site · expansível por etapas")
+    st.markdown(
+        f'<p style="margin:4px 0 0;font-size:13px;">'
+        f'<a class="insta-link" href="{INSTAGRAM_URL}" target="_blank" rel="noopener">'
+        f'📷 @fazendasantaverginia</a></p>',
+        unsafe_allow_html=True,
+    )
 with col_acao:
     if st.button("🔄 Atualizar"):
         st.cache_data.clear()
@@ -500,4 +514,10 @@ with tab_abs:
         st.info("Sem faltas registradas neste mês — índice zerado.")
 
 st.divider()
-st.caption("SIGCF | Hub RH | Núcleo de Controladoria SV · Fase 1: Justificativa + Absenteísmo")
+st.markdown(
+    f'<p style="text-align:center;font-size:12px;color:#8aab80;margin:0;">'
+    f'SIGCF | Hub RH | Núcleo de Controladoria SV · Fase 1: Justificativa + Absenteísmo · '
+    f'<a class="insta-link" href="{INSTAGRAM_URL}" target="_blank" rel="noopener">Instagram SV</a>'
+    f'</p>',
+    unsafe_allow_html=True,
+)
