@@ -4,7 +4,7 @@ from datetime import date, datetime
 from io import BytesIO
 from calendar import monthrange
 from supabase import create_client, Client
-from sigcf_auth import exigir_acesso
+from sigcf_auth import exigir_acesso, link_instagram
 
 st.set_page_config(
     page_title="SIGRH — SANTA VERGÍNIA",
@@ -15,7 +15,6 @@ st.set_page_config(
 
 LOGO_URL = "https://i.postimg.cc/Y9X7ddnb/LOGO-BP.jpg"
 BG_URL = "https://media.bio.site/sites/32a25c2c-d6fa-4dfc-bdc2-27e4d35d7ea2/AhS9mKiQxFRXAyMBdXDzEG.jpg"
-INSTAGRAM_URL = "https://www.instagram.com/fazendasantaverginia"
 TABELA = "rh_justificativa_faltas"
 DIAS_UTEIS_MES = 22
 
@@ -81,8 +80,10 @@ h1{font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;}
  display:inline-block;padding:3px 10px;border-radius:10px;}
 .hub-card.active .tag{background:rgba(26,58,24,0.9);color:#8ec486;border:1px solid #5a9452;}
 .hub-card.soon .tag{background:#1a1a10;color:#8aab80;border:1px solid #3a4a38;}
-.insta-link{color:#8ec486!important;text-decoration:none;font-weight:600;}
-.insta-link:hover{color:#a8d8a0!important;text-decoration:underline;}
+.insta-link{display:inline-flex;align-items:center;gap:6px;color:#8ec486!important;
+ text-decoration:none;font-weight:600;}
+.insta-link:hover{color:#a8d8a0!important;text-decoration:none;}
+.insta-ico{width:17px;height:17px;flex-shrink:0;}
 
 .stTextInput input,.stNumberInput input,.stTextArea textarea,
 [data-testid="stDateInput"] input{
@@ -301,9 +302,7 @@ with col_titulo:
     st.title("SIGRH")
     st.caption("SANTA VERGÍNIA · GESTÃO DE RECURSOS HUMANOS")
     st.markdown(
-        f'<p style="margin:4px 0 0;font-size:13px;">'
-        f'<a class="insta-link" href="{INSTAGRAM_URL}" target="_blank" rel="noopener">'
-        f'📷 @fazendasantaverginia</a></p>',
+        f'<p style="margin:4px 0 0;font-size:13px;">{link_instagram()}</p>',
         unsafe_allow_html=True,
     )
 with col_acao:
@@ -512,7 +511,7 @@ st.divider()
 st.markdown(
     f'<p style="text-align:center;font-size:12px;color:#8aab80;margin:0;">'
     f'SIGRH · Santa Virgínia · '
-    f'<a class="insta-link" href="{INSTAGRAM_URL}" target="_blank" rel="noopener">Instagram</a>'
+    f'{link_instagram("Instagram")}'
     f'</p>',
     unsafe_allow_html=True,
 )
