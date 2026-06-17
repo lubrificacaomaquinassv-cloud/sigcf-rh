@@ -152,10 +152,54 @@ def fmt_data(d) -> str:
         return str(d)
 
 
+def ler_credenciais_supabase() -> tuple[str, str]:
+    """Aceita secrets no formato plano (SIGCF) ou seção [supabase]."""
+    url = (
+        st.secrets.get("SUPABASE_URL")
+        or st.secrets.get("supabase_url")
+        or (st.secrets.get("supabase", {}) or {}).get("url")
+        or (st.secrets.get("supabase", {}) or {}).get("SUPABASE_URL")
+    )
+    key = (
+        st.secrets.get("SUPABASE_KEY")
+        or st.secrets.get("supabase_key")
+        or (st.secrets.get("supabase", {}) or {}).get("key")
+        or (st.secrets.get("supabase", {}) or {}).get("SUPABASE_KEY")
+    )
+    return str(url or "").strip(), str(key or "").strip()
+
+
+def diagnosticar_secrets():
+    try:
+        chaves = list(st.secrets.keys())
+    except Exception:
+        chaves = []
+    st.error("Secrets do Supabase não encontrados neste app.")
+    st.markdown("**Chaves detectadas no Streamlit:** " + (", ".join(chaves) if chaves else "nenhuma"))
+    st.markdown(
+        """
+        Cole em **Streamlit Cloud → seu app sigcf-rh → Settings → Secrets → Save → Reboot app**:
+
+        ```toml
+        SUPABASE_URL = "https://azhpxhrwhegfysoeqmft.supabase.co"
+        SUPABASE_KEY = "eyJ...sua-anon-key..."
+        APP_PIN = "SV2026!x"
+        ```
+
+        **Atenção:** sem colchetes `[ ]` no topo, aspas normais `"`, e salvar no app **sigcf-rh** (não em outro).
+        """
+    )
+
+
+url_sb, key_sb = ler_credenciais_supabase()
+if not url_sb or not key_sb:
+    diagnosticar_secrets()
+    st.stop()
+
 try:
-    sb = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
+    sb = create_client(url_sb, key_sb)
 except Exception as exc:
-    st.error("Configure SUPABASE_URL e SUPABASE_KEY nos Secrets.")
+    st.error("Não foi possível conectar ao Supabase.")
     st.caption(str(exc))
     st.stop()
 
