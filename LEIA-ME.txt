@@ -1,0 +1,26 @@
+SIGCF — HUB RH (substitui bio.site)
+=====================================
+
+FASE 1 (no ar)
+--------------
+- Justificativa de faltas
+- Consulta + export Excel
+- Índice de absenteísmo (mensal)
+
+FASE 2 (em breve)
+-----------------
+- Solicitação de contratação
+- Solicitação de demissão
+- Feedback da liderança
+
+ANTES DE PUBLICAR
+-----------------
+1. Supabase → SQL Editor → cole sql/001_rh_justificativa_faltas.sql → Run
+2. GitHub → lubrificacaomaquinassv-cloud/sigcf-rh
+3. Streamlit Cloud → Main file: rh_app.py
+4. Secrets: SUPABASE_URL, SUPABASE_KEY, APP_PIN
+
+RODAR LOCAL
+-----------
+pip install -r requirements.txt
+streamlit run rh_app.py
