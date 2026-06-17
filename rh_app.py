@@ -299,7 +299,7 @@ with col_logo:
     st.markdown(f'<div class="logo-box"><img src="{LOGO_URL}" width="100"></div>', unsafe_allow_html=True)
 with col_titulo:
     st.title("SIGRH")
-    st.caption("Santa Virgínia · Recursos Humanos")
+    st.caption("SANTA VERGÍNIA · GESTÃO DE RECURSOS HUMANOS")
     st.markdown(
         f'<p style="margin:4px 0 0;font-size:13px;">'
         f'<a class="insta-link" href="{INSTAGRAM_URL}" target="_blank" rel="noopener">'
