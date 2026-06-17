@@ -1,4 +1,4 @@
--- SIGCF — Módulo RH · Justificativa de Faltas
+-- SIGRH — Justificativa de Faltas
 -- Cole no SQL Editor do Supabase e clique Run (uma vez).
 
 create table if not exists public.rh_justificativa_faltas (
@@ -28,4 +28,4 @@ drop policy if exists rh_faltas_anon_all on public.rh_justificativa_faltas;
 create policy rh_faltas_anon_all on public.rh_justificativa_faltas
     for all using (true) with check (true);
 
-comment on table public.rh_justificativa_faltas is 'SIGCF RH — justificativas de faltas e base para índice de absenteísmo';
+comment on table public.rh_justificativa_faltas is 'SIGRH — justificativas de faltas e base para índice de absenteísmo';

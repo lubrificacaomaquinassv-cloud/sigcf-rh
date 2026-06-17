@@ -7,7 +7,7 @@ from supabase import create_client, Client
 from sigcf_auth import exigir_acesso
 
 st.set_page_config(
-    page_title="Hub RH - SIGCF",
+    page_title="SIGRH — Santa Virgínia",
     page_icon="👥",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -50,7 +50,7 @@ MODULOS_RH = [
     {"id": "feedback", "nome": "Feedback da liderança", "icone": "💬", "ativo": False},
 ]
 
-exigir_acesso("Hub RH Santa Virgínia")
+exigir_acesso("SIGRH — Santa Virgínia")
 
 st.markdown("""
 <style>
@@ -298,7 +298,8 @@ col_logo, col_titulo, col_acao = st.columns([1, 5, 1])
 with col_logo:
     st.markdown(f'<div class="logo-box"><img src="{LOGO_URL}" width="100"></div>', unsafe_allow_html=True)
 with col_titulo:
-    st.title("Hub RH Santa Virgínia")
+    st.title("SIGRH")
+    st.caption("Santa Virgínia · Recursos Humanos")
     st.markdown(
         f'<p style="margin:4px 0 0;font-size:13px;">'
         f'<a class="insta-link" href="{INSTAGRAM_URL}" target="_blank" rel="noopener">'
@@ -312,7 +313,7 @@ with col_acao:
 
 st.divider()
 
-st.markdown('<div class="sec">Módulos RH</div>', unsafe_allow_html=True)
+st.markdown('<div class="sec">Módulos SIGRH</div>', unsafe_allow_html=True)
 cols = st.columns(len(MODULOS_RH))
 for i, mod in enumerate(MODULOS_RH):
     cls = "active" if mod["ativo"] else "soon"
@@ -510,7 +511,7 @@ with tab_abs:
 st.divider()
 st.markdown(
     f'<p style="text-align:center;font-size:12px;color:#8aab80;margin:0;">'
-    f'SIGCF · Hub RH · Santa Virgínia · '
+    f'SIGRH · Santa Virgínia · '
     f'<a class="insta-link" href="{INSTAGRAM_URL}" target="_blank" rel="noopener">Instagram</a>'
     f'</p>',
     unsafe_allow_html=True,

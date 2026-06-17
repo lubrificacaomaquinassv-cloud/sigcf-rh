@@ -1,4 +1,4 @@
-"""PIN opcional SIGCF."""
+"""PIN opcional SIGRH / SIGCF."""
 import streamlit as st
 
 LOGO_URL = "https://i.postimg.cc/Y9X7ddnb/LOGO-BP.jpg"
@@ -7,7 +7,7 @@ INSTAGRAM_URL = "https://www.instagram.com/fazendasantaverginia"
 SESSION_KEY = "sigcf_auth"
 
 
-def exigir_acesso(titulo: str, subtitulo: str = "Acesso restrito — SIGCF Santa Vergínia"):
+def exigir_acesso(titulo: str, subtitulo: str = "Acesso restrito — SIGRH Santa Virgínia"):
     pin_cfg = str(st.secrets.get("APP_PIN", "") or "").strip()
     if not pin_cfg:
         return

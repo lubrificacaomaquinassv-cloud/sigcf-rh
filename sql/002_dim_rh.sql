@@ -1,4 +1,4 @@
--- SIGCF — Cadastro RH (separado de dim_colaborador / Oficina)
+-- SIGRH — Cadastro RH (separado de dim_colaborador / Oficina)
 -- Cole no SQL Editor do Supabase e clique Run (uma vez).
 
 create table if not exists public.dim_rh (
@@ -21,7 +21,7 @@ drop policy if exists dim_rh_anon_all on public.dim_rh;
 create policy dim_rh_anon_all on public.dim_rh
     for all using (true) with check (true);
 
-comment on table public.dim_rh is 'SIGCF RH — cadastro de funcionários (Hub RH, absenteísmo, folha)';
+comment on table public.dim_rh is 'SIGRH — cadastro de funcionários (Hub RH, absenteísmo, folha)';
 
 -- Vincula justificativas à dim_rh (rode mesmo se a tabela de faltas já existir)
 alter table public.rh_justificativa_faltas

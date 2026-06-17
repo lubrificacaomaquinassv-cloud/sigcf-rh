@@ -1,5 +1,5 @@
-SIGCF — HUB RH (substitui bio.site)
-=====================================
+SIGRH — Sistema Integrado de Gestão de RH (Santa Virgínia)
+============================================================
 
 FASE 1 (no ar)
 --------------
@@ -9,18 +9,13 @@ FASE 1 (no ar)
 
 CADASTRO DE FUNCIONÁRIOS — dim_rh
 ---------------------------------
-Lista EXCLUSIVA do RH (separada de dim_colaborador / Oficina).
+Lista exclusiva do RH (separada de dim_colaborador / Oficina).
 
 1. Supabase → SQL Editor → sql/002_dim_rh.sql → Run
-2. Edite os nomes de exemplo ou importe planilha:
-   - colaboradores_rh.xlsx na pasta SIGCF_RH
+2. Atualizar planilha:
+   - colaboradores_rh.xls na pasta do projeto
    - python gerar_sql_colaboradores_rh.py
    - Cole sql/dim_rh_gerado.sql no Supabase
-
-ORDEM SQL NO SUPABASE
----------------------
-1. sql/001_rh_justificativa_faltas.sql  (se ainda não rodou)
-2. sql/002_dim_rh.sql                   (tabela + coluna id_rh nas faltas)
 
 STREAMLIT CLOUD
 ---------------
