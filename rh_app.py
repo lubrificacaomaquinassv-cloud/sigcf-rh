@@ -38,18 +38,7 @@ SETORES = [
     "Outros",
 ]
 
-MAPA_FUNCAO_SETOR = {
-    "OPERADOR": "Máquinas",
-    "MECANICO": "Oficina",
-    "MECÂNICO": "Oficina",
-    "ADMINISTRATIVO": "Administração",
-    "PECUARIA": "Pecuária",
-    "PECUÁRIA": "Pecuária",
-    "FLORESTAL": "Florestal",
-    "REFEITORIO": "Refeitório",
-    "REFEITÓRIO": "Refeitório",
-    "RH": "RH",
-}
+DIM_RH = "dim_rh"
 
 MODULOS_RH = [
     {"id": "faltas", "nome": "Justificativa de faltas", "icone": "📋", "ativo": True},
@@ -218,10 +207,10 @@ except Exception as exc:
 
 
 @st.cache_data(ttl=120)
-def carregar_colaboradores():
+def carregar_funcionarios_rh():
     res = (
-        sb.table("dim_colaborador")
-        .select("id_colaborador, nome, funcao")
+        sb.table(DIM_RH)
+        .select("id_rh, nome, setor, cargo")
         .eq("ativo", True)
         .order("nome")
         .execute()
@@ -239,23 +228,18 @@ def carregar_faltas(data_ini=None, data_fim=None):
     return query.limit(1000).execute().data or []
 
 
-def colaborador_por_nome(nome: str, lista: list) -> dict | None:
+def funcionario_por_nome(nome: str, lista: list) -> dict | None:
     for c in lista:
         if c.get("nome") == nome:
             return c
     return None
 
 
-def setor_por_funcao(funcao: str) -> str:
-    f = str(funcao or "").strip().upper()
-    return MAPA_FUNCAO_SETOR.get(f, "Outros")
-
-
 def indice_setor(setor: str) -> int:
-    try:
-        return SETORES.index(setor)
-    except ValueError:
-        return SETORES.index("Outros")
+    s = (setor or "Outros").strip()
+    if s in SETORES:
+        return SETORES.index(s)
+    return SETORES.index("Outros")
 
 
 def calcular_absenteismo(rows: list, num_colaboradores: int, dias_uteis: int) -> dict:
@@ -285,7 +269,7 @@ def df_faltas(rows: list) -> pd.DataFrame:
     return pd.DataFrame(out)
 
 
-colaboradores = carregar_colaboradores()
+funcionarios_rh = carregar_funcionarios_rh()
 
 col_logo, col_titulo, col_acao = st.columns([1, 5, 1])
 with col_logo:
@@ -325,40 +309,41 @@ tab_nova, tab_consulta, tab_abs = st.tabs([
 with tab_nova:
     st.markdown('<div class="sec">Registrar justificativa de falta</div>', unsafe_allow_html=True)
 
-    if colaboradores:
-        st.caption(f"**{len(colaboradores)}** colaboradores ativos em `dim_colaborador` — lista única SIGCF.")
+    if funcionarios_rh:
+        st.caption(f"**{len(funcionarios_rh)}** funcionários ativos em `dim_rh` (cadastro exclusivo RH).")
     else:
         st.warning(
-            "Nenhum colaborador ativo cadastrado. Rode no Supabase: "
-            "`sql/002_cadastro_colaboradores_ativos.sql` ou importe planilha via `gerar_sql_colaboradores_rh.py`."
+            "Nenhum funcionário em `dim_rh`. Rode no Supabase: "
+            "`sql/002_dim_rh.sql` ou importe planilha via `gerar_sql_colaboradores_rh.py`."
         )
 
     st.markdown('<div class="ctx-box">', unsafe_allow_html=True)
 
-    busca_colab = st.text_input("🔍 Buscar colaborador", placeholder="Digite parte do nome…", key="busca_colab")
+    busca_colab = st.text_input("🔍 Buscar funcionário", placeholder="Digite parte do nome…", key="busca_colab")
     filtrados = [
-        c for c in colaboradores
-        if not busca_colab.strip() or busca_colab.strip().upper() in c.get("nome", "").upper()
+        f for f in funcionarios_rh
+        if not busca_colab.strip() or busca_colab.strip().upper() in f.get("nome", "").upper()
     ]
     opcoes_colab = [
-        f"{c['nome']} — {c.get('funcao', '—')}" for c in filtrados
+        f"{f['nome']} — {f.get('setor') or '—'} — {f.get('cargo') or '—'}" for f in filtrados
     ] if filtrados else []
 
     if opcoes_colab:
-        colab_label = st.selectbox("👤 Colaborador", options=opcoes_colab, key="sel_colab")
+        colab_label = st.selectbox("👤 Funcionário", options=opcoes_colab, key="sel_colab")
         nome_sel = colab_label.split(" — ", 1)[0]
-        info_colab = colaborador_por_nome(nome_sel, colaboradores) or {}
-        setor_default = indice_setor(setor_por_funcao(info_colab.get("funcao", "")))
+        info = funcionario_por_nome(nome_sel, funcionarios_rh) or {}
+        setor_default = indice_setor(info.get("setor"))
         st.markdown(
             f'<p style="color:#8aab80;font-size:12px;margin:0 0 8px;">'
-            f'ID: {info_colab.get("id_colaborador", "—")} · Função: {info_colab.get("funcao", "—")}</p>',
+            f'ID RH: {info.get("id_rh", "—")} · Setor: {info.get("setor") or "—"} · '
+            f'Cargo: {info.get("cargo") or "—"}</p>',
             unsafe_allow_html=True,
         )
     else:
         colab_label = ""
-        info_colab = {}
+        info = {}
         setor_default = 0
-        nome_manual = st.text_input("👤 Nome do colaborador (cadastro manual)", key="nome_manual")
+        nome_manual = st.text_input("👤 Nome do funcionário (cadastro manual)", key="nome_manual")
 
     with st.form("form_falta", clear_on_submit=True):
         c1, c2, c3 = st.columns(3)
@@ -386,12 +371,12 @@ with tab_nova:
     if enviar:
         if opcoes_colab:
             nome = nome_sel
-            id_colab = info_colab.get("id_colaborador")
-            funcao = info_colab.get("funcao") or ""
+            id_rh = info.get("id_rh")
+            cargo = info.get("cargo") or ""
         else:
             nome = (nome_manual or "").strip()
-            id_colab = None
-            funcao = ""
+            id_rh = None
+            cargo = ""
         if not nome:
             st.warning("Informe o colaborador.")
         elif not motivo.strip():
@@ -399,10 +384,11 @@ with tab_nova:
         else:
             registro = {
                 "data_falta": str(data_falta),
-                "id_colaborador": id_colab,
+                "id_rh": id_rh,
+                "id_colaborador": id_rh,
                 "nome_colaborador": nome,
                 "setor": setor,
-                "funcao": funcao or None,
+                "funcao": cargo or None,
                 "tipo_justificativa": tipo,
                 "dias_ausencia": float(dias_ausencia),
                 "possui_atestado": possui_atestado,
@@ -418,7 +404,9 @@ with tab_nova:
                 st.rerun()
             except Exception as e:
                 msg = str(e)
-                if "rh_justificativa_faltas" in msg and "does not exist" in msg.lower():
+                if "dim_rh" in msg and "does not exist" in msg.lower():
+                    st.error("Tabela dim_rh não criada. Rode sql/002_dim_rh.sql no Supabase.")
+                elif "rh_justificativa_faltas" in msg and "does not exist" in msg.lower():
                     st.error("Tabela ainda não criada. Rode o SQL em SIGCF_RH/sql/001_rh_justificativa_faltas.sql no Supabase.")
                 else:
                     st.error(f"Erro ao salvar: {e}")
@@ -474,7 +462,7 @@ with tab_abs:
     fim_mes = date(int(ano), int(mes), ultimo_dia)
     rows_mes = carregar_faltas(ini_mes, fim_mes)
 
-    num_colab = len(colaboradores) if colaboradores else st.number_input(
+    num_colab = len(funcionarios_rh) if funcionarios_rh else st.number_input(
         "Colaboradores ativos (estimativa)", min_value=1, value=50, key="nc_est"
     )
     resumo = calcular_absenteismo(rows_mes, num_colab, int(dias_uteis))

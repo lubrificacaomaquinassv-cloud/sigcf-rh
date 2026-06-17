@@ -7,28 +7,22 @@ FASE 1 (no ar)
 - Consulta + export Excel
 - Índice de absenteísmo (mensal)
 
-FASE 2 (em breve)
------------------
-- Solicitação de contratação
-- Solicitação de demissão
-- Feedback da liderança
+CADASTRO DE FUNCIONÁRIOS — dim_rh
+---------------------------------
+Lista EXCLUSIVA do RH (separada de dim_colaborador / Oficina).
 
-ANTES DE PUBLICAR
------------------
-1. Supabase → SQL Editor → cole sql/001_rh_justificativa_faltas.sql → Run
-2. Cadastre funcionários ativos:
-   - Opção A: sql/002_cadastro_colaboradores_ativos.sql (edite os nomes)
-   - Opção B: planilha colaboradores_rh.xlsx + python gerar_sql_colaboradores_rh.py
-3. GitHub → lubrificacaomaquinassv-cloud/sigcf-rh
-4. Streamlit Cloud → Main file: rh_app.py
-5. Secrets: SUPABASE_URL, SUPABASE_KEY, APP_PIN
+1. Supabase → SQL Editor → sql/002_dim_rh.sql → Run
+2. Edite os nomes de exemplo ou importe planilha:
+   - colaboradores_rh.xlsx na pasta SIGCF_RH
+   - python gerar_sql_colaboradores_rh.py
+   - Cole sql/dim_rh_gerado.sql no Supabase
 
-CADASTRO DE COLABORADORES
--------------------------
-O Hub RH puxa a lista de dim_colaborador (ativo = true).
-Mesma tabela usada por Apontamento, Oficina e Gestor — uma fonte única.
+ORDEM SQL NO SUPABASE
+---------------------
+1. sql/001_rh_justificativa_faltas.sql  (se ainda não rodou)
+2. sql/002_dim_rh.sql                   (tabela + coluna id_rh nas faltas)
 
-RODAR LOCAL
------------
-pip install -r requirements.txt
-streamlit run rh_app.py
+STREAMLIT CLOUD
+---------------
+Repo: sigcf-rh · Main file: rh_app.py
+Secrets: SUPABASE_URL, SUPABASE_KEY, APP_PIN

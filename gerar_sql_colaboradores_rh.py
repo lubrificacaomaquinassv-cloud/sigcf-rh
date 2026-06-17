@@ -1,20 +1,19 @@
 # -*- coding: utf-8 -*-
-"""Gera SQL de colaboradores ativos a partir de planilha Excel do RH.
+"""Gera SQL de funcionários para dim_rh a partir de planilha Excel do RH.
 
 Colunas esperadas (detecção automática):
   - Nome / Colaborador / Funcionário
-  - Setor / Função / Cargo (opcional — default ADMINISTRATIVO)
-  - Matrícula / ID (opcional — gera RH-001, RH-002…)
+  - Setor / Área (opcional)
+  - Cargo / Função (opcional)
+  - Matrícula / ID (opcional — gera RH-0001, RH-0002…)
 
-Saída: sql/colaboradores_rh_gerado.sql → cole no Supabase.
+Saída: sql/dim_rh_gerado.sql → cole no Supabase.
 """
 from pathlib import Path
 import sys
 
 PASTA = Path(__file__).resolve().parent
-SAIDA = PASTA / "sql" / "colaboradores_rh_gerado.sql"
-
-# Ajuste o caminho da planilha do RH:
+SAIDA = PASTA / "sql" / "dim_rh_gerado.sql"
 ARQUIVO = PASTA / "colaboradores_rh.xlsx"
 
 
@@ -39,13 +38,14 @@ def main():
 
     if not ARQUIVO.is_file():
         print(f"Coloque a planilha em: {ARQUIVO}")
-        print("Colunas: Nome | Setor (opcional) | Matricula (opcional)")
+        print("Colunas: Nome | Setor | Cargo | Matricula (opcionais)")
         sys.exit(1)
 
     df = pd.read_excel(ARQUIVO)
     cols = list(df.columns)
     col_nome = achar_coluna(cols, ["NOME", "COLABOR", "FUNCION"])
-    col_setor = achar_coluna(cols, ["SETOR", "FUNCAO", "CARGO", "AREA"])
+    col_setor = achar_coluna(cols, ["SETOR", "AREA", "DEPART"])
+    col_cargo = achar_coluna(cols, ["CARGO", "FUNCAO", "FUNÇÃO", "CARG"])
     col_id = achar_coluna(cols, ["MATRIC", "ID", "COD"])
 
     if not col_nome:
@@ -58,29 +58,33 @@ def main():
         nome = str(row[col_nome]).strip()
         if not nome or nome.lower() == "nan":
             continue
-        funcao = str(row[col_setor]).strip().upper() if col_setor and str(row[col_setor]) != "nan" else "ADMINISTRATIVO"
+        setor = str(row[col_setor]).strip() if col_setor and str(row[col_setor]) != "nan" else "Outros"
+        cargo = str(row[col_cargo]).strip() if col_cargo and str(row[col_cargo]) != "nan" else None
         if col_id and str(row[col_id]) != "nan":
             cid = str(row[col_id]).strip().upper().replace(" ", "-")
         else:
             cid = f"RH-{seq:04d}"
             seq += 1
         nome_sql = nome.replace("'", "''")
-        linhas.append(f"('{cid}', '{nome_sql}', '{funcao}', 0, true)")
+        setor_sql = setor.replace("'", "''")
+        cargo_sql = "null" if not cargo else f"'{cargo.replace(chr(39), chr(39)*2)}'"
+        linhas.append(f"('{cid}', '{nome_sql}', '{setor_sql}', {cargo_sql}, true)")
 
     if not linhas:
         sys.exit("Nenhuma linha válida na planilha.")
 
     sql = (
         "-- Gerado automaticamente — gerar_sql_colaboradores_rh.py\n"
-        "insert into dim_colaborador (id_colaborador, nome, funcao, custo_hora, ativo) values\n"
+        "insert into dim_rh (id_rh, nome, setor, cargo, ativo) values\n"
         + ",\n".join(linhas)
-        + "\non conflict (id_colaborador) do update set\n"
+        + "\non conflict (id_rh) do update set\n"
         "    nome = excluded.nome,\n"
-        "    funcao = excluded.funcao,\n"
+        "    setor = excluded.setor,\n"
+        "    cargo = excluded.cargo,\n"
         "    ativo = excluded.ativo;\n"
     )
     SAIDA.write_text(sql, encoding="utf-8")
-    print(f"OK: {len(linhas)} colaboradores → {SAIDA}")
+    print(f"OK: {len(linhas)} funcionários → {SAIDA}")
 
 
 if __name__ == "__main__":
