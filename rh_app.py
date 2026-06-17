@@ -56,33 +56,33 @@ st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&display=swap');
 .stApp{
- background:linear-gradient(rgba(10,20,9,0.78),rgba(10,20,9,0.90)),
+ background:linear-gradient(rgba(10,20,9,0.68),rgba(10,20,9,0.82)),
  url('__BG__') center center/cover no-repeat fixed!important;}
 [data-testid="stAppViewContainer"]{background:transparent!important;}
 [data-testid="stSidebar"]{display:none;}
-[data-testid="stHeader"]{background:rgba(10,20,9,0.55)!important;}
-.block-container{background:transparent!important;}
+[data-testid="stHeader"]{background:rgba(10,20,9,0.45)!important;}
+.block-container{background:transparent!important;max-width:980px!important;}
 h1,h2,h3,h4,p,span,label{color:#e8edd0;}
 h1{font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;}
-.stCaption,[data-testid="stCaptionContainer"] p{color:#8aab80!important;}
+.stCaption,[data-testid="stCaptionContainer"] p{color:#9ab892!important;}
 .sec{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;
- letter-spacing:2px;text-transform:uppercase;color:#8aab80;
- border-left:4px solid #4a9e3f;padding-left:10px;margin:8px 0 12px;}
+ letter-spacing:2px;text-transform:uppercase;color:#9ab892;
+ border-left:4px solid #5a9452;padding-left:10px;margin:8px 0 12px;}
 .logo-box{background:#ffffff;border-radius:10px;padding:8px 12px;display:inline-block;}
-.ctx-box{background:rgba(13,24,12,0.94);border:1px solid #1e2e1c;border-radius:12px;padding:14px 16px;margin-bottom:12px;}
-.hub-card{background:rgba(17,28,16,0.92);border:1px solid #1e2e1c;border-radius:14px;padding:18px 14px;
+.ctx-box{background:rgba(13,24,12,0.88);border:1px solid #2a3d28;border-radius:12px;padding:14px 16px;margin-bottom:12px;}
+.hub-card{background:rgba(17,28,16,0.86);border:1px solid #2a3d28;border-radius:14px;padding:18px 14px;
  text-align:center;min-height:118px;transition:border-color .2s;}
-.hub-card.active{border-color:#4a9e3f;border-top:3px solid #4a9e3f;}
+.hub-card.active{border-color:rgba(90,148,82,0.85);border-top:3px solid #5a9452;}
 .hub-card.soon{opacity:.55;border-style:dashed;}
 .hub-card .ico{font-size:28px;line-height:1;margin-bottom:8px;}
 .hub-card .tit{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;
  color:#e8edd0;text-transform:uppercase;letter-spacing:.5px;line-height:1.25;}
 .hub-card .tag{font-size:9px;font-weight:700;letter-spacing:1px;margin-top:8px;
  display:inline-block;padding:3px 10px;border-radius:10px;}
-.hub-card.active .tag{background:#1a3a18;color:#6fcf60;border:1px solid #4a9e3f;}
+.hub-card.active .tag{background:rgba(26,58,24,0.9);color:#8ec486;border:1px solid #5a9452;}
 .hub-card.soon .tag{background:#1a1a10;color:#8aab80;border:1px solid #3a4a38;}
-.insta-link{color:#6fcf60!important;text-decoration:none;font-weight:600;}
-.insta-link:hover{color:#9fe790!important;text-decoration:underline;}
+.insta-link{color:#8ec486!important;text-decoration:none;font-weight:600;}
+.insta-link:hover{color:#a8d8a0!important;text-decoration:underline;}
 
 .stTextInput input,.stNumberInput input,.stTextArea textarea,
 [data-testid="stDateInput"] input{
@@ -102,22 +102,37 @@ div[data-baseweb="popover"] li{color:#1a2818!important;}
 [data-testid="stNumberInput"] button{
  background:#cdd9c4!important;border-color:#4a6644!important;color:#1a2818!important;}
 [data-testid="stForm"]{
- background:rgba(13,24,12,0.94)!important;border:1px solid #1e2e1c!important;
+ background:rgba(13,24,12,0.88)!important;border:1px solid #2a3d28!important;
  border-radius:12px;padding:12px 16px;}
-div[data-testid="stMetric"]{background:rgba(13,24,12,0.94);border:1px solid #1e2e1c;border-radius:10px;padding:10px 14px;}
-div[data-testid="stMetric"] label{color:#8aab80!important;}
-div[data-testid="stMetricValue"]{color:#6fcf60!important;font-family:'Barlow Condensed',sans-serif;}
-.stTabs [data-baseweb="tab-list"]{background:rgba(13,24,12,0.94);border-bottom:1px solid #1e2e1c;gap:8px;}
+div[data-testid="stMetric"]{background:rgba(13,24,12,0.88);border:1px solid #2a3d28;border-radius:10px;padding:10px 14px;}
+div[data-testid="stMetric"] label{color:#9ab892!important;}
+div[data-testid="stMetricValue"]{color:#8ec486!important;font-family:'Barlow Condensed',sans-serif;}
+.stTabs [data-baseweb="tab-list"]{background:rgba(13,24,12,0.88);border-bottom:1px solid #2a3d28;gap:8px;}
 .stTabs [data-baseweb="tab"]{
- color:#8aab80!important;font-family:'Barlow Condensed',sans-serif;font-weight:600;}
-.stTabs [aria-selected="true"]{color:#e8edd0!important;border-bottom-color:#4a9e3f!important;}
-.stTabs [data-baseweb="tab-highlight"]{background-color:#4a9e3f!important;}
+ color:#9ab892!important;font-family:'Barlow Condensed',sans-serif;font-weight:600;}
+.stTabs [aria-selected="true"]{color:#e8edd0!important;border-bottom-color:#5a9452!important;}
+.stTabs [data-baseweb="tab-highlight"]{background-color:#5a9452!important;}
 div[data-testid="stCheckbox"] label span{color:#e8edd0!important;}
 .stButton button,[data-testid="stFormSubmitButton"] button{
- background:#4a9e3f!important;color:#ffffff!important;border:1px solid #6fcf60!important;
+ background:#4a9e3f!important;color:#ffffff!important;border:1px solid #6fa864!important;
  font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:1.5px;
- text-transform:uppercase;border-radius:8px;}
+ text-transform:uppercase;border-radius:8px;min-height:44px;}
 .stButton button:hover,[data-testid="stFormSubmitButton"] button:hover{background:#3d8534!important;}
+
+@media (max-width:768px){
+ .block-container{padding-left:0.75rem!important;padding-right:0.75rem!important;padding-top:1rem!important;}
+ h1{font-size:1.55rem!important;line-height:1.15!important;}
+ div[data-testid="stHorizontalBlock"]{flex-wrap:wrap!important;gap:0.35rem!important;}
+ div[data-testid="stHorizontalBlock"] > div[data-testid="column"]{
+  min-width:calc(50% - 0.5rem)!important;flex:1 1 calc(50% - 0.5rem)!important;}
+ div[data-testid="stHorizontalBlock"]:has(.hub-card) > div[data-testid="column"]{
+  min-width:100%!important;flex:1 1 100%!important;}
+ .hub-card{min-height:88px;padding:14px 10px;}
+ .stTextInput input,.stNumberInput input,.stTextArea textarea,
+ [data-testid="stDateInput"] input{font-size:16px!important;min-height:44px!important;}
+ div[data-baseweb="select"] > div{min-height:44px!important;}
+ [data-testid="stFormSubmitButton"] button{width:100%!important;}
+}
 </style>
 """.replace("__BG__", BG_URL), unsafe_allow_html=True)
 
