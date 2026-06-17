@@ -16,9 +16,17 @@ FASE 2 (em breve)
 ANTES DE PUBLICAR
 -----------------
 1. Supabase → SQL Editor → cole sql/001_rh_justificativa_faltas.sql → Run
-2. GitHub → lubrificacaomaquinassv-cloud/sigcf-rh
-3. Streamlit Cloud → Main file: rh_app.py
-4. Secrets: SUPABASE_URL, SUPABASE_KEY, APP_PIN
+2. Cadastre funcionários ativos:
+   - Opção A: sql/002_cadastro_colaboradores_ativos.sql (edite os nomes)
+   - Opção B: planilha colaboradores_rh.xlsx + python gerar_sql_colaboradores_rh.py
+3. GitHub → lubrificacaomaquinassv-cloud/sigcf-rh
+4. Streamlit Cloud → Main file: rh_app.py
+5. Secrets: SUPABASE_URL, SUPABASE_KEY, APP_PIN
+
+CADASTRO DE COLABORADORES
+-------------------------
+O Hub RH puxa a lista de dim_colaborador (ativo = true).
+Mesma tabela usada por Apontamento, Oficina e Gestor — uma fonte única.
 
 RODAR LOCAL
 -----------

@@ -38,6 +38,19 @@ SETORES = [
     "Outros",
 ]
 
+MAPA_FUNCAO_SETOR = {
+    "OPERADOR": "Máquinas",
+    "MECANICO": "Oficina",
+    "MECÂNICO": "Oficina",
+    "ADMINISTRATIVO": "Administração",
+    "PECUARIA": "Pecuária",
+    "PECUÁRIA": "Pecuária",
+    "FLORESTAL": "Florestal",
+    "REFEITORIO": "Refeitório",
+    "REFEITÓRIO": "Refeitório",
+    "RH": "RH",
+}
+
 MODULOS_RH = [
     {"id": "faltas", "nome": "Justificativa de faltas", "icone": "📋", "ativo": True},
     {"id": "absenteismo", "nome": "Índice de absenteísmo", "icone": "📊", "ativo": True},
@@ -233,6 +246,18 @@ def colaborador_por_nome(nome: str, lista: list) -> dict | None:
     return None
 
 
+def setor_por_funcao(funcao: str) -> str:
+    f = str(funcao or "").strip().upper()
+    return MAPA_FUNCAO_SETOR.get(f, "Outros")
+
+
+def indice_setor(setor: str) -> int:
+    try:
+        return SETORES.index(setor)
+    except ValueError:
+        return SETORES.index("Outros")
+
+
 def calcular_absenteismo(rows: list, num_colaboradores: int, dias_uteis: int) -> dict:
     if num_colaboradores <= 0 or dias_uteis <= 0:
         return {"indice": 0.0, "total_dias": 0.0, "denominador": 0}
@@ -261,7 +286,6 @@ def df_faltas(rows: list) -> pd.DataFrame:
 
 
 colaboradores = carregar_colaboradores()
-nomes_colab = [c["nome"] for c in colaboradores] if colaboradores else []
 
 col_logo, col_titulo, col_acao = st.columns([1, 5, 1])
 with col_logo:
@@ -300,7 +324,41 @@ tab_nova, tab_consulta, tab_abs = st.tabs([
 
 with tab_nova:
     st.markdown('<div class="sec">Registrar justificativa de falta</div>', unsafe_allow_html=True)
+
+    if colaboradores:
+        st.caption(f"**{len(colaboradores)}** colaboradores ativos em `dim_colaborador` — lista única SIGCF.")
+    else:
+        st.warning(
+            "Nenhum colaborador ativo cadastrado. Rode no Supabase: "
+            "`sql/002_cadastro_colaboradores_ativos.sql` ou importe planilha via `gerar_sql_colaboradores_rh.py`."
+        )
+
     st.markdown('<div class="ctx-box">', unsafe_allow_html=True)
+
+    busca_colab = st.text_input("🔍 Buscar colaborador", placeholder="Digite parte do nome…", key="busca_colab")
+    filtrados = [
+        c for c in colaboradores
+        if not busca_colab.strip() or busca_colab.strip().upper() in c.get("nome", "").upper()
+    ]
+    opcoes_colab = [
+        f"{c['nome']} — {c.get('funcao', '—')}" for c in filtrados
+    ] if filtrados else []
+
+    if opcoes_colab:
+        colab_label = st.selectbox("👤 Colaborador", options=opcoes_colab, key="sel_colab")
+        nome_sel = colab_label.split(" — ", 1)[0]
+        info_colab = colaborador_por_nome(nome_sel, colaboradores) or {}
+        setor_default = indice_setor(setor_por_funcao(info_colab.get("funcao", "")))
+        st.markdown(
+            f'<p style="color:#8aab80;font-size:12px;margin:0 0 8px;">'
+            f'ID: {info_colab.get("id_colaborador", "—")} · Função: {info_colab.get("funcao", "—")}</p>',
+            unsafe_allow_html=True,
+        )
+    else:
+        colab_label = ""
+        info_colab = {}
+        setor_default = 0
+        nome_manual = st.text_input("👤 Nome do colaborador (cadastro manual)", key="nome_manual")
 
     with st.form("form_falta", clear_on_submit=True):
         c1, c2, c3 = st.columns(3)
@@ -311,19 +369,9 @@ with tab_nova:
         with c3:
             possui_atestado = st.checkbox("📎 Possui atestado / declaração")
 
-        if nomes_colab:
-            colab_sel = st.selectbox("👤 Colaborador", options=nomes_colab)
-            info = colaborador_por_nome(colab_sel, colaboradores) or {}
-            id_colab = info.get("id_colaborador")
-            funcao = info.get("funcao") or ""
-        else:
-            colab_sel = st.text_input("👤 Nome do colaborador")
-            id_colab = None
-            funcao = ""
-
         c4, c5 = st.columns(2)
         with c4:
-            setor = st.selectbox("🏢 Setor", options=SETORES, index=0)
+            setor = st.selectbox("🏢 Setor", options=SETORES, index=setor_default if opcoes_colab else 0)
         with c5:
             tipo = st.selectbox("📌 Tipo de justificativa", options=TIPOS_JUSTIFICATIVA)
 
@@ -336,7 +384,14 @@ with tab_nova:
     st.markdown('</div>', unsafe_allow_html=True)
 
     if enviar:
-        nome = (colab_sel or "").strip()
+        if opcoes_colab:
+            nome = nome_sel
+            id_colab = info_colab.get("id_colaborador")
+            funcao = info_colab.get("funcao") or ""
+        else:
+            nome = (nome_manual or "").strip()
+            id_colab = None
+            funcao = ""
         if not nome:
             st.warning("Informe o colaborador.")
         elif not motivo.strip():
