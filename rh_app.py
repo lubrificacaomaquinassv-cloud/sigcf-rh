@@ -50,7 +50,7 @@ MODULOS_RH = [
     {"id": "feedback", "nome": "Feedback da liderança", "icone": "💬", "ativo": False},
 ]
 
-exigir_acesso("SIGRH — Santa Virgínia")
+exigir_acesso("SIGRH — SANTA VERGÍNIA")
 
 st.markdown("""
 <style>
