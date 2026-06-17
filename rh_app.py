@@ -299,7 +299,6 @@ with col_logo:
     st.markdown(f'<div class="logo-box"><img src="{LOGO_URL}" width="100"></div>', unsafe_allow_html=True)
 with col_titulo:
     st.title("Hub RH Santa Virgínia")
-    st.caption("SIGCF — Módulo Recursos Humanos · substitui bio.site · expansível por etapas")
     st.markdown(
         f'<p style="margin:4px 0 0;font-size:13px;">'
         f'<a class="insta-link" href="{INSTAGRAM_URL}" target="_blank" rel="noopener">'
@@ -338,41 +337,23 @@ tab_nova, tab_consulta, tab_abs = st.tabs([
 with tab_nova:
     st.markdown('<div class="sec">Registrar justificativa de falta</div>', unsafe_allow_html=True)
 
-    if funcionarios_rh:
-        st.caption(f"**{len(funcionarios_rh)}** funcionários ativos em `dim_rh` (cadastro exclusivo RH).")
-    else:
-        st.warning(
-            "Nenhum funcionário em `dim_rh`. Rode no Supabase: "
-            "`sql/002_dim_rh.sql` ou importe planilha via `gerar_sql_colaboradores_rh.py`."
-        )
+    if not funcionarios_rh:
+        st.warning("Nenhum funcionário cadastrado. Contate o RH.")
 
-    st.markdown('<div class="ctx-box">', unsafe_allow_html=True)
-
-    busca_colab = st.text_input("🔍 Buscar funcionário", placeholder="Digite parte do nome…", key="busca_colab")
-    filtrados = [
-        f for f in funcionarios_rh
-        if not busca_colab.strip() or busca_colab.strip().upper() in f.get("nome", "").upper()
-    ]
     opcoes_colab = [
-        f"{f['nome']} — {f.get('setor') or '—'} — {f.get('cargo') or '—'}" for f in filtrados
-    ] if filtrados else []
+        f"{f['nome']} — {f.get('setor') or '—'} — {f.get('cargo') or '—'}" for f in funcionarios_rh
+    ]
 
     if opcoes_colab:
         colab_label = st.selectbox("👤 Funcionário", options=opcoes_colab, key="sel_colab")
         nome_sel = colab_label.split(" — ", 1)[0]
         info = funcionario_por_nome(nome_sel, funcionarios_rh) or {}
         setor_default = indice_setor(info.get("setor"))
-        st.markdown(
-            f'<p style="color:#8aab80;font-size:12px;margin:0 0 8px;">'
-            f'ID RH: {info.get("id_rh", "—")} · Setor: {info.get("setor") or "—"} · '
-            f'Cargo: {info.get("cargo") or "—"}</p>',
-            unsafe_allow_html=True,
-        )
     else:
         colab_label = ""
         info = {}
         setor_default = 0
-        nome_manual = st.text_input("👤 Nome do funcionário (cadastro manual)", key="nome_manual")
+        nome_manual = st.text_input("👤 Nome do funcionário", key="nome_manual")
 
     with st.form("form_falta", clear_on_submit=True):
         c1, c2, c3 = st.columns(3)
@@ -394,8 +375,6 @@ with tab_nova:
         registrado_por = st.text_input("✍️ Registrado por (liderança / RH)", placeholder="Nome de quem registra")
 
         enviar = st.form_submit_button("✅ Registrar justificativa", type="primary", use_container_width=True)
-
-    st.markdown('</div>', unsafe_allow_html=True)
 
     if enviar:
         if opcoes_colab:
@@ -531,8 +510,8 @@ with tab_abs:
 st.divider()
 st.markdown(
     f'<p style="text-align:center;font-size:12px;color:#8aab80;margin:0;">'
-    f'SIGCF | Hub RH | Núcleo de Controladoria SV · Fase 1: Justificativa + Absenteísmo · '
-    f'<a class="insta-link" href="{INSTAGRAM_URL}" target="_blank" rel="noopener">Instagram SV</a>'
+    f'SIGCF · Hub RH · Santa Virgínia · '
+    f'<a class="insta-link" href="{INSTAGRAM_URL}" target="_blank" rel="noopener">Instagram</a>'
     f'</p>',
     unsafe_allow_html=True,
 )
