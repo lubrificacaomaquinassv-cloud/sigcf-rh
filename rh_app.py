@@ -7,7 +7,7 @@ from supabase import create_client, Client
 from sigcf_auth import exigir_acesso
 
 st.set_page_config(
-    page_title="SIGRH — Santa Virgínia",
+    page_title="SIGRH — SANTA VERGÍNIA",
     page_icon="👥",
     layout="wide",
     initial_sidebar_state="collapsed",
