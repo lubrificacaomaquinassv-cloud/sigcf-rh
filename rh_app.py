@@ -4,7 +4,7 @@ from datetime import date, datetime
 from io import BytesIO
 from calendar import monthrange
 from supabase import create_client, Client
-from sigcf_auth import exigir_acesso
+from sigcf_auth import exigir_acesso, logo_html
 
 st.set_page_config(
     page_title="SIGRH — SANTA VERGÍNIA",
@@ -13,9 +13,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-LOGO_URL = "https://i.postimg.cc/Y9X7ddnb/LOGO-BP.jpg"
 BG_URL = "https://media.bio.site/sites/32a25c2c-d6fa-4dfc-bdc2-27e4d35d7ea2/AhS9mKiQxFRXAyMBdXDzEG.jpg"
-INSTAGRAM_URL = "https://www.instagram.com/fazendasantaverginia"
 TABELA = "rh_justificativa_faltas"
 DIAS_UTEIS_MES = 22
 
@@ -26,8 +24,8 @@ def link_instagram(text: str = "@fazendasantaverginia") -> str:
         'width="17" height="17" alt="" loading="lazy">'
     )
     return (
-        f'<a class="insta-link" href="{INSTAGRAM_URL}" target="_blank" rel="noopener">'
-        f"{icon}{text}</a>"
+        f'<a class="insta-link" href="https://www.instagram.com/fazendasantaverginia" '
+        f'target="_blank" rel="noopener">{icon}{text}</a>'
     )
 
 TIPOS_JUSTIFICATIVA = [
@@ -79,7 +77,9 @@ h1{font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;}
 .sec{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;
  letter-spacing:2px;text-transform:uppercase;color:#9ab892;
  border-left:4px solid #5a9452;padding-left:10px;margin:8px 0 12px;}
-.logo-box{background:#ffffff;border-radius:10px;padding:8px 12px;display:inline-block;}
+.logo-frame{background:linear-gradient(145deg,#0a1628,#0d2040);border:2px solid #c9a227;
+ border-radius:12px;padding:5px;display:inline-block;box-shadow:0 4px 18px rgba(0,0,0,.45);}
+.logo-frame img{display:block;border-radius:8px;}
 .ctx-box{background:rgba(13,24,12,0.88);border:1px solid #2a3d28;border-radius:12px;padding:14px 16px;margin-bottom:12px;}
 .hub-card{background:rgba(17,28,16,0.86);border:1px solid #2a3d28;border-radius:14px;padding:18px 14px;
  text-align:center;min-height:118px;transition:border-color .2s;}
@@ -307,9 +307,9 @@ def df_faltas(rows: list) -> pd.DataFrame:
 
 funcionarios_rh = carregar_funcionarios_rh()
 
-col_logo, col_titulo, col_acao = st.columns([1, 5, 1])
+col_logo, col_titulo, col_acao = st.columns([1.1, 4.9, 1])
 with col_logo:
-    st.markdown(f'<div class="logo-box"><img src="{LOGO_URL}" width="100"></div>', unsafe_allow_html=True)
+    st.markdown(logo_html(118), unsafe_allow_html=True)
 with col_titulo:
     st.title("SIGRH")
     st.caption("SANTA VERGÍNIA · GESTÃO DE RECURSOS HUMANOS")
