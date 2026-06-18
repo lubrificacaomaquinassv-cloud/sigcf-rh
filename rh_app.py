@@ -4,7 +4,7 @@ from datetime import date, datetime
 from io import BytesIO
 from calendar import monthrange
 from supabase import create_client, Client
-from sigcf_auth import exigir_acesso, link_instagram
+from sigcf_auth import exigir_acesso
 
 st.set_page_config(
     page_title="SIGRH — SANTA VERGÍNIA",
@@ -15,8 +15,20 @@ st.set_page_config(
 
 LOGO_URL = "https://i.postimg.cc/Y9X7ddnb/LOGO-BP.jpg"
 BG_URL = "https://media.bio.site/sites/32a25c2c-d6fa-4dfc-bdc2-27e4d35d7ea2/AhS9mKiQxFRXAyMBdXDzEG.jpg"
+INSTAGRAM_URL = "https://www.instagram.com/fazendasantaverginia"
 TABELA = "rh_justificativa_faltas"
 DIAS_UTEIS_MES = 22
+
+
+def link_instagram(text: str = "@fazendasantaverginia") -> str:
+    icon = (
+        '<img class="insta-ico" src="https://cdn.simpleicons.org/instagram/8ec486" '
+        'width="17" height="17" alt="" loading="lazy">'
+    )
+    return (
+        f'<a class="insta-link" href="{INSTAGRAM_URL}" target="_blank" rel="noopener">'
+        f"{icon}{text}</a>"
+    )
 
 TIPOS_JUSTIFICATIVA = [
     "Atestado médico",
