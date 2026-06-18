@@ -522,7 +522,7 @@ with tab_abs:
 st.divider()
 st.markdown(
     f'<p style="text-align:center;font-size:12px;color:#8aab80;margin:0;">'
-    f'SIGRH · Santa Virgínia · '
+    f'SIGRH · SANTA VERGÍNIA · '
     f'{link_instagram("Instagram")}'
     f'</p>',
     unsafe_allow_html=True,
