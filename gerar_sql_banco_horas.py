@@ -47,10 +47,35 @@ COMPETENCIA = "2026-06-01"
 DIVISOR_HORA_MES = 220  # jornada 44h/semana (seg-sex 8h + sáb 4h) -> divisor CLT padrão
 DATA_EXAME_PERIODICO = "11/06/2026"  # toda 2ª quinta-feira do mês
 
-CODIGOS_NAO_FALTA = (
-    "FOLGA", "BANCO", "DISPENSA AUTORIZADA", "DISPENSA PONTO", "F�RIAS", "FERIAS",
-    "SERVI�O EXTERNO", "SERVICO EXTERNO", "AFASTAMENTO INSS", "ABONAR", "SUSPENS",
+TIPO_KEYWORDS = (
+    ("FOLGA DIA UTIL", "FOLGA_DIA_UTIL"),
+    ("FOLGA", "FOLGA"),
+    ("DISPENSA AUTORIZADA", "DISPENSA_AUTORIZADA"),
+    ("DISPENSA PONTO", "DISPENSA_PONTO"),
+    ("BANCO", "BANCO"),
+    ("F�RIAS", "FERIAS"),
+    ("FERIAS", "FERIAS"),
+    ("SERVI�O EXTERNO", "SERVICO_EXTERNO"),
+    ("SERVICO EXTERNO", "SERVICO_EXTERNO"),
+    ("AFASTAMENTO INSS", "AFASTAMENTO_INSS"),
+    ("ABONAR", "ABONO_HORAS"),
+    ("SUSPENS", "SUSPENSAO"),
 )
+
+# Tipos exibidos como "justificativa de ausência" no painel de absenteísmo
+# (exclui Folga/Banco/Trabalhado/Serviço Externo, que não são ausências).
+TIPOS_JUSTIFICATIVA_ABSENTEISMO = {
+    "FALTA_INJUSTIFICADA": "Falta injustificada",
+    "ATESTADO_MEDICO": "Atestado médico",
+    "FERIAS": "Férias",
+    "AFASTAMENTO_INSS": "Afastamento INSS",
+    "DISPENSA_AUTORIZADA": "Dispensa autorizada",
+    "DISPENSA_PONTO": "Dispensa de ponto",
+    "ABONO_HORAS": "Abono de horas",
+    "SUSPENSAO": "Suspensão",
+    "FOLGA_DIA_UTIL": "Folga em dia útil",
+    "EXAME_PERIODICO": "Exame periódico (11/06)",
+}
 
 
 def norm(s) -> str:
@@ -183,8 +208,9 @@ def classificar_dia(data_str: str, resto: str) -> str:
         return "FALTA_INJUSTIFICADA"
     if "ATESTADO" in resto_up:
         return "EXAME_PERIODICO" if data_str == DATA_EXAME_PERIODICO else "ATESTADO_MEDICO"
-    if any(cod in resto_up for cod in CODIGOS_NAO_FALTA):
-        return "JUSTIFICADO"
+    for kw, tipo in TIPO_KEYWORDS:
+        if kw in resto_up:
+            return tipo
     tem_hora = bool(RE_NUM_HHMM.search(resto))
     if tem_hora:
         return "TRABALHADO"
@@ -215,18 +241,22 @@ def carregar_ponto(caminho: Path) -> dict:
                 data_str, dow, resto = m.groups()
                 classe = classificar_dia(data_str, resto)
                 contagem[classe] += 1
-                if classe in ("TRABALHADO", "FALTA_INJUSTIFICADA", "ATESTADO_MEDICO"):
+                if classe in ("TRABALHADO", "SERVICO_EXTERNO", "FALTA_INJUSTIFICADA", "ATESTADO_MEDICO"):
                     dias_uteis_esperados += 1
 
+            dias_justificados_total = sum(
+                n for tipo, n in contagem.items() if tipo in TIPOS_JUSTIFICATIVA_ABSENTEISMO
+            )
             out[norm(nome)] = {
                 "nome": nome, "matricula": matricula, "cargo": cargo, "departamento": departamento,
                 "dias_uteis": dias_uteis_esperados,
-                "dias_trabalhados": contagem["TRABALHADO"],
+                "dias_trabalhados": contagem["TRABALHADO"] + contagem["SERVICO_EXTERNO"],
                 "faltas_injustificadas": contagem["FALTA_INJUSTIFICADA"],
                 "atestado_medico": contagem["ATESTADO_MEDICO"],
                 "dias_falta": contagem["FALTA_INJUSTIFICADA"] + contagem["ATESTADO_MEDICO"],
                 "exame_periodico": contagem["EXAME_PERIODICO"],
-                "dias_justificados": contagem["JUSTIFICADO"],
+                "dias_justificados": dias_justificados_total,
+                "tipos": {tipo: n for tipo, n in contagem.items() if tipo in TIPOS_JUSTIFICATIVA_ABSENTEISMO},
             }
     return out
 
@@ -258,7 +288,7 @@ def main():
         for n in nao_cadastrados[:15]:
             print("   -", n)
 
-    linhas_banco, linhas_folha, linhas_ponto = [], [], []
+    linhas_banco, linhas_folha, linhas_ponto, linhas_tipos = [], [], [], []
     setor_agg = defaultdict(lambda: {"qtd": 0, "he50": 0.0, "he100": 0.0, "saldo": 0.0, "valor": 0.0})
 
     for nrm in sorted(todos_nomes & set(dim_rh)):
@@ -304,6 +334,14 @@ def main():
                 f"0, 0, 0, {pto['faltas_injustificadas']}, 'IMPORT_CARTAO_PONTO', "
                 f"'{esc(obs_ponto)}')"
             )
+            for tipo, qtd in pto["tipos"].items():
+                if qtd <= 0:
+                    continue
+                linhas_tipos.append(
+                    f"('{id_rh}', '{COMPETENCIA}', '{esc(rh['nome'])}', '{esc(setor)}', "
+                    f"'{tipo}', '{esc(TIPOS_JUSTIFICATIVA_ABSENTEISMO[tipo])}', {qtd}, "
+                    f"'IMPORT_CARTAO_PONTO')"
+                )
 
     partes = [
         f"-- Importação SIGRH — competência {COMPETENCIA[:7]} "
@@ -347,6 +385,14 @@ def main():
             "origem = excluded.origem, observacao = excluded.observacao;\n"
         )
 
+    if linhas_tipos:
+        partes.append(
+            "\ndelete from rh_ponto_tipos_mensal where competencia = '" + COMPETENCIA + "';\n"
+            "insert into rh_ponto_tipos_mensal (id_rh, competencia, nome_colaborador, setor, "
+            "tipo, tipo_descricao, qtd_dias, origem) values\n"
+            + ",\n".join(linhas_tipos) + ";\n"
+        )
+
     linhas_setor = []
     for setor, agg in sorted(setor_agg.items(), key=lambda kv: kv[1]["saldo"], reverse=True):
         linhas_setor.append(
@@ -369,6 +415,7 @@ def main():
     print(f"  rh_banco_horas: {len(linhas_banco)} linhas")
     print(f"  rh_folha_mensal: {len(linhas_folha)} linhas")
     print(f"  rh_ponto_mensal: {len(linhas_ponto)} linhas")
+    print(f"  rh_ponto_tipos_mensal: {len(linhas_tipos)} linhas")
     print(f"  rh_banco_horas_setor: {len(linhas_setor)} setores")
 
 
