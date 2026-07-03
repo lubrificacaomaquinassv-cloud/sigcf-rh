@@ -286,6 +286,10 @@ def _render_absenteismo(rows_ponto, rows_tipos, nomes_rh, cargos_rh):
         "afastamento INSS, suspensão ou exame periódico — não inclui dispensas/folgas administrativas "
         "rotineiras (ex.: sábado dispensado), que aparecem à parte na tabela de tipos abaixo."
     )
+    st.caption(
+        "⚠️ Excluída do cálculo: Silvana Maria da Silva — atende a residência do gerente na cidade "
+        "e não bate ponto na fazenda; suas ausências no cartão-ponto não são reais."
+    )
 
     st.divider()
 

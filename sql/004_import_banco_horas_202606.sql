@@ -1,6 +1,11 @@
 -- Importação SIGRH — competência 2026-06 (cartão-ponto 21/05 a 20/06/2026)
 -- Gerado automaticamente por gerar_sql_banco_horas.py — cole no Supabase SQL Editor.
 
+
+-- Colaboradores excluídos do calculo de absenteísmo (não batem ponto no local): 'RH-0135'
+delete from rh_ponto_mensal where competencia = '2026-06-01' and id_rh in ('RH-0135');
+delete from rh_ponto_tipos_mensal where competencia = '2026-06-01' and id_rh in ('RH-0135');
+
 insert into rh_banco_horas (id_rh, competencia, setor, horas_he_50, horas_he_100, horas_credito, horas_debito, saldo_mes, saldo_acumulado, valor_he_50, valor_he_100, valor_total, origem, observacao) values
 ('RH-0002', '2026-06-01', 'Plantio', 0, 0, 0, 6.37, -6.37, 35.12, 0, 0, 385.27, 'IMPORT_FOPA', 'Extrato banco de horas 21/05-20/06/2026'),
 ('RH-0003', '2026-06-01', 'Autoclave (Industria)', 0, 0, 0, 2.23, -2.23, 8.17, 0, 0, 83.09, 'IMPORT_FOPA', 'Extrato banco de horas 21/05-20/06/2026'),
@@ -353,7 +358,6 @@ insert into rh_ponto_mensal (id_rh, competencia, nome_colaborador, setor, dias_u
 ('RH-0131', '2026-06-01', 'Sebastiao Aparecido Grance', 'Manutenção Geral', 28, 28, 0, 0, 0, 0, 0, 0, 'IMPORT_CARTAO_PONTO', 'Justificados=0; Exame periodico(11/06)=0; Atestado medico (falta justificada)=0'),
 ('RH-0133', '2026-06-01', 'Severina Tavares de Andrade Silva', 'Viveiro Florestal', 22, 19, 3, 0, 0, 0, 0, 0, 'IMPORT_CARTAO_PONTO', 'Justificados=4; Exame periodico(11/06)=0; Atestado medico (falta justificada)=3'),
 ('RH-0134', '2026-06-01', 'Sidnei Alves da Silva', 'Retiro Poço Azul', 22, 22, 0, 0, 0, 0, 0, 0, 'IMPORT_CARTAO_PONTO', 'Justificados=1; Exame periodico(11/06)=0; Atestado medico (falta justificada)=0'),
-('RH-0135', '2026-06-01', 'Silvana Maria da Silva', 'Administração', 22, 0, 22, 0, 0, 0, 0, 22, 'IMPORT_CARTAO_PONTO', 'Justificados=27; Exame periodico(11/06)=0; Atestado medico (falta justificada)=0'),
 ('RH-0136', '2026-06-01', 'Tania dos Santos Pereira', 'Viveiro Florestal', 21, 21, 0, 0, 0, 0, 0, 0, 'IMPORT_CARTAO_PONTO', 'Justificados=3; Exame periodico(11/06)=0; Atestado medico (falta justificada)=0'),
 ('RH-0137', '2026-06-01', 'Uelinton Gonçalves Araujo da Silva', 'Fabrica de Sal', 15, 15, 0, 0, 0, 0, 0, 0, 'IMPORT_CARTAO_PONTO', 'Justificados=2; Exame periodico(11/06)=1; Atestado medico (falta justificada)=0'),
 ('RH-0138', '2026-06-01', 'Vagner Aparecido dos Santos', 'Retiro Barra do Cervo', 29, 28, 1, 0, 0, 0, 0, 1, 'IMPORT_CARTAO_PONTO', 'Justificados=1; Exame periodico(11/06)=0; Atestado medico (falta justificada)=0'),
@@ -559,8 +563,6 @@ insert into rh_ponto_tipos_mensal (id_rh, competencia, nome_colaborador, setor, 
 ('RH-0133', '2026-06-01', 'Severina Tavares de Andrade Silva', 'Viveiro Florestal', 'ATESTADO_MEDICO', 'Atestado médico', 3, 'IMPORT_CARTAO_PONTO'),
 ('RH-0133', '2026-06-01', 'Severina Tavares de Andrade Silva', 'Viveiro Florestal', 'DISPENSA_AUTORIZADA', 'Dispensa autorizada', 1, 'IMPORT_CARTAO_PONTO'),
 ('RH-0134', '2026-06-01', 'Sidnei Alves da Silva', 'Retiro Poço Azul', 'FOLGA_DIA_UTIL', 'Folga em dia útil', 1, 'IMPORT_CARTAO_PONTO'),
-('RH-0135', '2026-06-01', 'Silvana Maria da Silva', 'Administração', 'FALTA_INJUSTIFICADA', 'Falta injustificada', 22, 'IMPORT_CARTAO_PONTO'),
-('RH-0135', '2026-06-01', 'Silvana Maria da Silva', 'Administração', 'DISPENSA_AUTORIZADA', 'Dispensa autorizada', 5, 'IMPORT_CARTAO_PONTO'),
 ('RH-0136', '2026-06-01', 'Tania dos Santos Pereira', 'Viveiro Florestal', 'DISPENSA_AUTORIZADA', 'Dispensa autorizada', 2, 'IMPORT_CARTAO_PONTO'),
 ('RH-0136', '2026-06-01', 'Tania dos Santos Pereira', 'Viveiro Florestal', 'FOLGA_DIA_UTIL', 'Folga em dia útil', 1, 'IMPORT_CARTAO_PONTO'),
 ('RH-0137', '2026-06-01', 'Uelinton Gonçalves Araujo da Silva', 'Fabrica de Sal', 'DISPENSA_AUTORIZADA', 'Dispensa autorizada', 1, 'IMPORT_CARTAO_PONTO'),

@@ -47,6 +47,13 @@ COMPETENCIA = "2026-06-01"
 DIVISOR_HORA_MES = 220  # jornada 44h/semana (seg-sex 8h + sáb 4h) -> divisor CLT padrão
 DATA_EXAME_PERIODICO = "11/06/2026"  # toda 2ª quinta-feira do mês
 
+# Colaboradores que não batem ponto no local (ex.: atendem residência/posto fora da fazenda)
+# e por isso o cartão-ponto mostra "falta" o mês todo — não é ausência real. São excluídos
+# do cálculo de absenteísmo (rh_ponto_mensal / rh_ponto_tipos_mensal) para não inflar os números.
+EXCLUSAO_ABSENTEISMO = {
+    "SILVANA MARIA DA SILVA",  # atende a casa do gerente na cidade, não bate ponto na fazenda
+}
+
 TIPO_KEYWORDS = (
     ("FOLGA DIA UTIL", "FOLGA_DIA_UTIL"),
     ("FOLGA", "FOLGA"),
@@ -289,6 +296,7 @@ def main():
             print("   -", n)
 
     linhas_banco, linhas_folha, linhas_ponto, linhas_tipos = [], [], [], []
+    ids_excluidos_absenteismo = []
     setor_agg = defaultdict(lambda: {"qtd": 0, "he50": 0.0, "he100": 0.0, "saldo": 0.0, "valor": 0.0})
 
     for nrm in sorted(todos_nomes & set(dim_rh)):
@@ -322,7 +330,9 @@ def main():
                 f"'Controle Banco de Horas.xls')"
             )
 
-        if pto:
+        if nrm in EXCLUSAO_ABSENTEISMO:
+            ids_excluidos_absenteismo.append(id_rh)
+        elif pto:
             obs_ponto = (
                 f"Justificados={pto['dias_justificados']}; "
                 f"Exame periodico(11/06)={pto['exame_periodico']}; "
@@ -348,6 +358,14 @@ def main():
         f"(cartão-ponto 21/05 a 20/06/2026)\n"
         f"-- Gerado automaticamente por gerar_sql_banco_horas.py — cole no Supabase SQL Editor.\n",
     ]
+
+    if ids_excluidos_absenteismo:
+        ids_sql = ", ".join(f"'{i}'" for i in ids_excluidos_absenteismo)
+        partes.append(
+            f"\n-- Colaboradores excluídos do calculo de absenteísmo (não batem ponto no local): {ids_sql}\n"
+            f"delete from rh_ponto_mensal where competencia = '{COMPETENCIA}' and id_rh in ({ids_sql});\n"
+            f"delete from rh_ponto_tipos_mensal where competencia = '{COMPETENCIA}' and id_rh in ({ids_sql});\n"
+        )
 
     if linhas_banco:
         partes.append(
