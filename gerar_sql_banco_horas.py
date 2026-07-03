@@ -60,13 +60,14 @@ TIPO_KEYWORDS = (
     ("DISPENSA AUTORIZADA", "DISPENSA_AUTORIZADA"),
     ("DISPENSA PONTO", "DISPENSA_PONTO"),
     ("BANCO", "BANCO"),
-    ("F�RIAS", "FERIAS"),
     ("FERIAS", "FERIAS"),
-    ("SERVI�O EXTERNO", "SERVICO_EXTERNO"),
     ("SERVICO EXTERNO", "SERVICO_EXTERNO"),
     ("AFASTAMENTO INSS", "AFASTAMENTO_INSS"),
     ("ABONAR", "ABONO_HORAS"),
     ("SUSPENS", "SUSPENSAO"),
+    ("DECLARACAO DE ACOMPANHAMENTO", "DECLARACAO_ACOMPANHAMENTO"),
+    ("LICENCA OBITO", "LICENCA_OBITO"),
+    ("LICENCA", "LICENCA_OBITO"),
 )
 
 # Tipos exibidos como "justificativa de ausência" no painel de absenteísmo
@@ -82,6 +83,8 @@ TIPOS_JUSTIFICATIVA_ABSENTEISMO = {
     "SUSPENSAO": "Suspensão",
     "FOLGA_DIA_UTIL": "Folga em dia útil",
     "EXAME_PERIODICO": "Exame periódico (11/06)",
+    "DECLARACAO_ACOMPANHAMENTO": "Declaração de acompanhamento",
+    "LICENCA_OBITO": "Licença óbito (nojo)",
 }
 
 
@@ -248,10 +251,25 @@ SKIP_HEADERS = ("EMITIDO EM", "EXTRATO POR PER", "N�MERO DE EXTRA", "NOME DO F
 RE_HEADER_NOME = re.compile(r"NOME DO FUNCION.RIO:\s*(.+?)\s+N.MERO DE MATR.CULA:\s*(\d+)")
 RE_HEADER_CARGO = re.compile(r"NOME DO CARGO:\s*(.+?)\s+NOME DO DEPARTAMENTO:\s*(.+?)\s+ENT")
 RE_DIA = re.compile(r"^(\d{2}/\d{2}/\d{4}) - (\w{3})\s*(.*)$")
+RE_PRIMEIRA_BATIDA = re.compile(r"^\d{1,2}:\d{2}")
 
 
 def classificar_dia(data_str: str, resto: str) -> str:
-    resto_up = resto.upper()
+    # norm() remove acentos/caixa — evita falha de match por diferença de
+    # acentuação/encoding entre o texto extraído do PDF e as palavras-chave
+    # (ex.: "Férias"/"Serviço Externo" com acento não bater com uma palavra-
+    # chave sem acento, o que faria o dia cair incorretamente em "falta").
+    resto_up = norm(resto)
+    # IMPORTANTE: a coluna ENT.2/SAÍ.2 (2º turno, volta do almoço) aparece como
+    # "Falta" sempre que o colaborador não bate o ponto do intervalo — mesmo em
+    # dias normalmente trabalhados (entrada 1 e saída 1 com horário real, e o
+    # próprio banco de horas creditando horas positivas nesse dia). Por isso a
+    # classificação NÃO pode se basear em "a palavra FALTA aparece em algum
+    # lugar da linha": ela só é uma ausência real quando a 1ª batida do dia
+    # (Entrada 1) também está ausente. Checamos a 1ª batida ANTES de procurar
+    # a palavra "Falta" em qualquer outro ponto da linha.
+    if RE_PRIMEIRA_BATIDA.match(resto_up):
+        return "TRABALHADO"
     if "FALTA" in resto_up:
         return "FALTA_INJUSTIFICADA"
     if "ATESTADO" in resto_up:
@@ -259,10 +277,7 @@ def classificar_dia(data_str: str, resto: str) -> str:
     for kw, tipo in TIPO_KEYWORDS:
         if kw in resto_up:
             return tipo
-    tem_hora = bool(RE_NUM_HHMM.search(resto))
-    if tem_hora:
-        return "TRABALHADO"
-    return "FALTA_INJUSTIFICADA"  # dia útil sem batida e sem código
+    return "FALTA_INJUSTIFICADA"  # dia útil sem nenhuma batida e sem código
 
 
 def carregar_ponto(caminho: Path) -> dict:

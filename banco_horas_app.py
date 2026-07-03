@@ -265,6 +265,7 @@ def _render_banco_horas(rows_banco, rows_setor, nomes_rh, cargos_rh):
 TIPOS_AFASTAMENTO_REAL = {
     "FALTA_INJUSTIFICADA", "ATESTADO_MEDICO", "FERIAS",
     "AFASTAMENTO_INSS", "SUSPENSAO", "EXAME_PERIODICO",
+    "DECLARACAO_ACOMPANHAMENTO", "LICENCA_OBITO",
 }
 
 
@@ -283,8 +284,9 @@ def _render_absenteismo(rows_ponto, rows_tipos, nomes_rh, cargos_rh):
     st.caption(
         f"Base: {total_colaboradores} colaboradores com registro de ponto na competência. "
         "'Nº de afastados' conta colaboradores com falta injustificada, atestado médico, férias, "
-        "afastamento INSS, suspensão ou exame periódico — não inclui dispensas/folgas administrativas "
-        "rotineiras (ex.: sábado dispensado), que aparecem à parte na tabela de tipos abaixo."
+        "afastamento INSS, suspensão, licença óbito, declaração de acompanhamento ou exame periódico "
+        "— não inclui dispensas/folgas administrativas rotineiras (ex.: sábado dispensado), que "
+        "aparecem à parte na tabela de tipos abaixo."
     )
     st.caption(
         "⚠️ Excluída do cálculo: Silvana Maria da Silva — atende a residência do gerente na cidade "
