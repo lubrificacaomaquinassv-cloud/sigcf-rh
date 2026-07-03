@@ -181,11 +181,25 @@ qtde_gerada_mes = sum(float(r.get("saldo_mes") or 0) for r in rows_banco)
 saldo_acumulado_total = sum(float(r.get("saldo_acumulado") or 0) for r in rows_banco)
 valor_total_geral = sum(float(r.get("valor_total") or 0) for r in rows_banco)
 
+horas_credito_total = sum(float(r.get("horas_credito") or 0) for r in rows_banco)
+horas_debito_total = sum(float(r.get("horas_debito") or 0) for r in rows_banco)
+
 k1, k2, k3, k4 = st.columns(4)
 k1.metric("Colaboradores", len(rows_banco))
-k2.metric("Qtde HE gerada no mês", f"{qtde_gerada_mes:.1f} h")
+k2.metric("Qtde HE gerada no mês (líquido)", f"{qtde_gerada_mes:.1f} h")
 k3.metric("Saldo acumulado (banco)", f"{saldo_acumulado_total:.1f} h")
 k4.metric("Valor total se pago", fmt_moeda(valor_total_geral))
+
+with st.expander("ℹ️ Como o número líquido do mês é composto?"):
+    d1, d2, d3 = st.columns(3)
+    d1.metric("Horas geradas (crédito)", f"+{horas_credito_total:.1f} h")
+    d2.metric("Horas debitadas (banco/ajustes)", f"-{horas_debito_total:.1f} h")
+    d3.metric("Líquido do período", f"{qtde_gerada_mes:.1f} h")
+    st.caption(
+        "O líquido pode ficar negativo quando o total debitado (ex.: sábados compensados "
+        "via 'Banco' e ajustes negativos) supera as horas extras geradas no período. "
+        "O saldo **acumulado** continua positivo porque soma os meses anteriores."
+    )
 
 st.divider()
 
