@@ -139,12 +139,19 @@ def carregar_salarios(caminho: Path) -> dict:
 
 # ---------------------------------------------------------------------------
 # 3) Extrato Banco de Horas (saldo + total do período por colaborador)
+#
+# O relatório tem 5 colunas numéricas por linha (100%D, CRED/DEB, AJUSTE,
+# TOTAL, SALDO), mas colunas com valor zero simplesmente não são impressas.
+# Extrair pela ORDEM dos números impressos (ex.: "pegar os 2 últimos") é
+# ambíguo quando SALDO (ou TOTAL) vem em branco — nesse caso o penúltimo
+# número impresso não é necessariamente TOTAL, e o último não é SALDO.
+# Por isso usamos a posição (x) de cada número na página, comparada com a
+# posição de cada cabeçalho de coluna, para atribuir cada valor à coluna
+# correta — TOTAL = CRED/DEB + AJUSTE quando a coluna TOTAL vier em branco.
 # ---------------------------------------------------------------------------
-RE_TOTAL_DEPTO = re.compile(r"^TOTAL\s+(.+?):\s*(\d+)\s+FUNCION", re.IGNORECASE)
-RE_LINHA_EMPREGADO = re.compile(r"^(.+?)\s+(\d{1,6})\s+(.+?)\s*((?:-?\d{1,4}:\d{2}\s*)*)$")
 RE_NUM_HHMM = re.compile(r"-?\d{1,4}:\d{2}")
-RE_SKIP_PERIODO = re.compile(r"^DE\s+\d{2}/\d{2}/\d{4}\s+AT")
-SKIP_HEADERS = ("EMITIDO EM", "EXTRATO POR PER", "N�MERO DE EXTRA", "NOME DO FUNCION", "P�GINA")
+RE_NOME_MATRICULA = re.compile(r"^([A-ZÀ-Ü' .]+?)\s+(\d{1,6})\b")
+COLUNAS_HEADER = ("CRED/DEB", "AJUSTE", "TOTAL", "SALDO")
 
 
 def hhmm_para_min(s: str) -> int:
@@ -154,51 +161,85 @@ def hhmm_para_min(s: str) -> int:
     return -v if neg else v
 
 
-def carregar_extrato(caminho: Path) -> dict:
-    with pdfplumber.open(caminho) as pdf:
-        linhas = []
-        for page in pdf.pages:
-            linhas.extend((page.extract_text() or "").split("\n"))
+def _limites_colunas(pdf) -> dict:
+    """Usa a linha de cabeçalho (NOME ... 100%D CRED/DEB AJUSTE TOTAL SALDO) para
+    descobrir a faixa de x de cada coluna. Não basta buscar a palavra "TOTAL" solta
+    na página, pois ela também aparece em cada linha de subtotal por setor."""
+    centros = {}
+    for page in pdf.pages:
+        palavras = page.extract_words()
+        linhas = {}
+        for w in palavras:
+            linhas.setdefault(round(w["top"]), []).append(w)
+        for ws in linhas.values():
+            achados = {w["text"]: (w["x0"] + w["x1"]) / 2 for w in ws if w["text"] in COLUNAS_HEADER}
+            if len(achados) == len(COLUNAS_HEADER):
+                centros = achados
+                break
+        if centros:
+            break
+    if not centros:
+        # fallback com posições típicas observadas no layout padrão do relatório
+        centros = {"CRED/DEB": 654.0, "AJUSTE": 703.0, "TOTAL": 749.0, "SALDO": 795.0}
+    ordem = sorted(centros.items(), key=lambda kv: kv[1])
+    limites = {}
+    for i, (nome, centro) in enumerate(ordem):
+        lo = -1e9 if i == 0 else (ordem[i - 1][1] + centro) / 2
+        hi = 1e9 if i == len(ordem) - 1 else (centro + ordem[i + 1][1]) / 2
+        limites[nome] = (lo, hi)
+    return limites
 
+
+def carregar_extrato(caminho: Path) -> dict:
     resultados = {}
-    pendentes = []
-    for raw in linhas:
-        raw = raw.strip()
-        if not raw:
-            continue
-        up = raw.upper()
-        if up.startswith("TOTAL "):
-            m = RE_TOTAL_DEPTO.match(raw)
-            if m:
-                dept = m.group(1).strip()
-                if dept.upper() != "GERAL":
-                    for pline in pendentes:
-                        idx = pline.rfind(dept)
-                        texto = pline[:idx] + pline[idx + len(dept):] if idx != -1 else pline
-                        texto = re.sub(r"\s{2,}", " ", texto).strip()
-                        mrow = RE_LINHA_EMPREGADO.match(texto)
-                        if not mrow:
-                            continue
-                        nome, matricula, cargo, numeros = mrow.groups()
-                        nums = RE_NUM_HHMM.findall(numeros)
-                        if not nums:
-                            total_min = saldo_min = 0
-                        elif len(nums) == 1:
-                            total_min = saldo_min = hhmm_para_min(nums[0])
-                        else:
-                            total_min = hhmm_para_min(nums[-2])
-                            saldo_min = hhmm_para_min(nums[-1])
-                        resultados[norm(nome)] = {
-                            "nome": nome.strip(), "matricula": matricula, "cargo": cargo.strip(),
-                            "departamento": dept, "total_mes_h": round(total_min / 60, 2),
-                            "saldo_h": round(saldo_min / 60, 2),
-                        }
-                pendentes = []
-            continue
-        if any(p in up for p in SKIP_HEADERS) or RE_SKIP_PERIODO.match(up):
-            continue
-        pendentes.append(raw)
+    with pdfplumber.open(caminho) as pdf:
+        limites = _limites_colunas(pdf)
+
+        def coluna_de(x0):
+            for nome, (lo, hi) in limites.items():
+                if lo <= x0 < hi:
+                    return nome
+            return None
+
+        for page in pdf.pages:
+            palavras = page.extract_words()
+            if not palavras:
+                continue
+            linhas = {}
+            for w in palavras:
+                linhas.setdefault(round(w["top"]), []).append(w)
+            for top in sorted(linhas):
+                ws = sorted(linhas[top], key=lambda w: w["x0"])
+                texto = " ".join(w["text"] for w in ws)
+                up = texto.upper()
+                if up.startswith("TOTAL") or any(p in up for p in SKIP_HEADERS) or RE_SKIP_PERIODO.match(up):
+                    continue
+                m = RE_NOME_MATRICULA.match(texto)
+                if not m:
+                    continue
+                nome, matricula = m.group(1).strip(), m.group(2)
+                if norm(nome) == "ADMINISTRADOR":
+                    continue
+                valores = {}
+                for w in ws:
+                    if RE_NUM_HHMM.fullmatch(w["text"]):
+                        col = coluna_de((w["x0"] + w["x1"]) / 2)
+                        if col:
+                            valores[col] = w["text"]
+                if "TOTAL" in valores:
+                    total_min = hhmm_para_min(valores["TOTAL"])
+                else:
+                    total_min = hhmm_para_min(valores.get("CRED/DEB", "0:00")) + hhmm_para_min(valores.get("AJUSTE", "0:00"))
+                saldo_min = hhmm_para_min(valores["SALDO"]) if "SALDO" in valores else 0
+                resultados[norm(nome)] = {
+                    "nome": nome, "matricula": matricula, "cargo": "", "departamento": "",
+                    "total_mes_h": round(total_min / 60, 2), "saldo_h": round(saldo_min / 60, 2),
+                }
     return resultados
+
+
+RE_SKIP_PERIODO = re.compile(r"^DE\s+\d{2}/\d{2}/\d{4}\s+AT")
+SKIP_HEADERS = ("EMITIDO EM", "EXTRATO POR PER", "N�MERO DE EXTRA", "NOME DO FUNCION", "P�GINA", "FUNCION�RIOS")
 
 
 # ---------------------------------------------------------------------------
