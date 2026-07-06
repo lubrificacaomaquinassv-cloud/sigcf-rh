@@ -17,7 +17,25 @@ Lista exclusiva do RH (separada de dim_colaborador / Oficina).
    - python gerar_sql_colaboradores_rh.py
    - Cole sql/dim_rh_gerado.sql no Supabase
 
-STREAMLIT CLOUD
----------------
-Repo: sigcf-rh · Main file: rh_app.py
-Secrets: SUPABASE_URL, SUPABASE_KEY, APP_PIN
+STREAMLIT CLOUD — SÃO 2 APPS SEPARADOS NO MESMO REPO
+-----------------------------------------------------
+Este repositório contém DOIS painéis independentes. Cada um precisa ser
+publicado como um "app" próprio no Streamlit Cloud (mesma conta, mesmo
+repo, "Main file path" diferente), pois são públicos distintos:
+
+1) Painel do colaborador (justificar faltas)
+   Main file: rh_app.py
+   Secrets: SUPABASE_URL, SUPABASE_KEY, APP_PIN
+
+2) Painel de Banco de Horas (RH/gestão — saldo, HE, absenteísmo real
+   do cartão-ponto)
+   Main file: banco_horas_app.py
+   Secrets: SUPABASE_URL, SUPABASE_KEY, APP_PIN (mesmos do app 1)
+
+Como publicar o app 2 (se ainda não existir):
+   a. share.streamlit.io → "New app"
+   b. Repo: lubrificacaomaquinassv-cloud/sigcf-rh · Branch: main
+   c. Main file path: banco_horas_app.py
+   d. Em "Advanced settings" → Secrets: colar as mesmas chaves do app 1
+      (SUPABASE_URL, SUPABASE_KEY, APP_PIN)
+   e. Deploy. A URL gerada será diferente da do app 1 — salve-a à parte.
