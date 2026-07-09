@@ -23,7 +23,6 @@ st.set_page_config(
 
 BG_URL = "https://media.bio.site/sites/32a25c2c-d6fa-4dfc-bdc2-27e4d35d7ea2/AhS9mKiQxFRXAyMBdXDzEG.jpg"
 T_BANCO = "rh_banco_horas"
-T_BANCO_SETOR = "rh_banco_horas_setor"
 T_PONTO = "rh_ponto_mensal"
 T_PONTO_TIPOS = "rh_ponto_tipos_mensal"
 DIM_RH = "dim_rh"
@@ -183,14 +182,6 @@ def carregar_banco_horas(comp: str):
 
 
 @st.cache_data(ttl=15)
-def carregar_banco_setor(comp: str):
-    try:
-        return sb.table(T_BANCO_SETOR).select("*").eq("competencia", comp).order("setor").execute().data or []
-    except Exception:
-        return None
-
-
-@st.cache_data(ttl=15)
 def carregar_ponto_mensal(comp: str):
     try:
         return sb.table(T_PONTO).select("*").eq("competencia", comp).order("setor").execute().data or []
@@ -206,7 +197,7 @@ def carregar_ponto_tipos(comp: str):
         return None
 
 
-def _render_banco_horas(rows_banco, rows_setor, nomes_rh, cargos_rh):
+def _render_banco_horas(rows_banco, nomes_rh, cargos_rh):
     grupo_sel = st.selectbox(
         "🗂️ Grupo", GRUPOS_ORDENADOS, key="bh_grupo_filtro",
         help="Agrupamento por área: Pecuária (retiros, plantio, fábrica de sal), "
@@ -215,8 +206,6 @@ def _render_banco_horas(rows_banco, rows_setor, nomes_rh, cargos_rh):
     )
     if grupo_sel != "Todos":
         rows_banco = [r for r in rows_banco if grupo_do_setor(r.get("setor")) == grupo_sel]
-        if rows_setor:
-            rows_setor = [r for r in rows_setor if grupo_do_setor(r.get("setor")) == grupo_sel]
         if not rows_banco:
             st.info(f"Nenhum colaborador com dados de banco de horas no grupo '{grupo_sel}'.")
             return
@@ -247,28 +236,34 @@ def _render_banco_horas(rows_banco, rows_setor, nomes_rh, cargos_rh):
 
     st.divider()
 
+    # Quando "Todos" está selecionado, agrupa os 21 setores individuais nos
+    # macro-grupos (Pecuária, Logística, Mecanização, Administração, Autoclave,
+    # Reflorestamento) — evita mostrar cada retiro/oficina "solto". Ao escolher
+    # um grupo específico, detalha os setores individuais dentro dele.
+    chave_agrupamento = grupo_do_setor if grupo_sel == "Todos" else (lambda s: s or "—")
+    acc_setor = {}
+    for r in rows_banco:
+        chave = chave_agrupamento(r.get("setor"))
+        a = acc_setor.setdefault(chave, {"saldo": 0.0, "valor": 0.0, "colabs": 0})
+        a["saldo"] += float(r.get("saldo_acumulado") or 0)
+        a["valor"] += float(r.get("valor_total") or 0)
+        a["colabs"] += 1
+    pares_setor = sorted(acc_setor.items(), key=lambda kv: kv[1]["saldo"], reverse=True)
+
+    titulo_mini = "💼 Saldo do banco por grupo" if grupo_sel == "Todos" else f"💼 Saldo do banco — setores em {grupo_sel}"
+    titulo_tabela = "🏢 Grupos — quantidade de horas e valor" if grupo_sel == "Todos" else f"🏢 Setores em {grupo_sel} — quantidade de horas e valor"
+    coluna_setor = "Grupo" if grupo_sel == "Todos" else "Setor"
+
     col_mini, col_rank = st.columns([1, 1.3])
 
     with col_mini:
-        st.markdown('<div class="sec">💼 Saldo do banco por setor</div>', unsafe_allow_html=True)
-        if rows_setor:
-            pares = sorted(
-                ((r.get("setor") or "—", float(r.get("horas_saldo_total") or 0)) for r in rows_setor),
-                key=lambda p: p[1], reverse=True,
-            )
-        else:
-            acc = {}
-            for r in rows_banco:
-                s = r.get("setor") or "—"
-                acc[s] = acc.get(s, 0.0) + float(r.get("saldo_acumulado") or 0)
-            pares = sorted(acc.items(), key=lambda p: p[1], reverse=True)
-
+        st.markdown(f'<div class="sec">{titulo_mini}</div>', unsafe_allow_html=True)
         linhas_html = "".join(
             f'<div style="display:flex;justify-content:space-between;padding:5px 2px;'
             f'border-bottom:1px solid #1e2e1c;font-size:13px;">'
-            f'<span style="color:#e8edd0;">{setor}</span>'
-            f'<span style="color:#8ec486;font-weight:700;">{saldo:.1f} h</span></div>'
-            for setor, saldo in pares
+            f'<span style="color:#e8edd0;">{nome}</span>'
+            f'<span style="color:#8ec486;font-weight:700;">{dados["saldo"]:.1f} h</span></div>'
+            for nome, dados in pares_setor
         )
         st.markdown(
             f'<div style="background:rgba(13,24,12,0.88);border:1px solid #2a3d28;'
@@ -300,22 +295,23 @@ def _render_banco_horas(rows_banco, rows_setor, nomes_rh, cargos_rh):
         vs4.metric("Função", cargos_rh.get(r_sel["id_rh"], "—"))
 
     st.divider()
-    st.markdown('<div class="sec">🏢 Setores — quantidade de horas e valor</div>', unsafe_allow_html=True)
-    if rows_setor:
-        df_setor = pd.DataFrame(rows_setor).rename(columns={
-            "setor": "Setor", "qtd_colaboradores": "Colaboradores",
-            "horas_saldo_total": "Saldo (h)", "valor_total": "Valor total",
-        })
-        df_setor = df_setor[["Setor", "Colaboradores", "Saldo (h)", "Valor total"]]
-        df_setor["Saldo (h)"] = df_setor["Saldo (h)"].astype(float).round(1)
-        df_setor["Valor total"] = df_setor["Valor total"].astype(float).map(fmt_moeda)
-        df_setor = df_setor.sort_values("Saldo (h)", ascending=False)
-        dark_table(df_setor, height=280)
+    st.markdown(f'<div class="sec">{titulo_tabela}</div>', unsafe_allow_html=True)
+    df_setor = pd.DataFrame([
+        {
+            coluna_setor: nome,
+            "Colaboradores": dados["colabs"],
+            "Saldo (h)": round(dados["saldo"], 1),
+            "Valor total": fmt_moeda(dados["valor"]),
+        }
+        for nome, dados in pares_setor
+    ])
+    dark_table(df_setor, height=280)
 
     st.markdown('<div class="sec">👤 Colaboradores — do maior para o menor saldo</div>', unsafe_allow_html=True)
     df_ind = pd.DataFrame([
         {
             "Colaborador": nomes_rh.get(r["id_rh"], r["id_rh"]),
+            "Grupo": grupo_do_setor(r.get("setor")),
             "Setor": r.get("setor") or "—",
             "Função": cargos_rh.get(r["id_rh"], "—"),
             "Saldo (h)": round(float(r.get("saldo_acumulado") or 0), 1),
@@ -465,14 +461,13 @@ tab_banco, tab_absenteismo = st.tabs(["⏱️ Banco de Horas", "📊 Absenteísm
 
 with tab_banco:
     rows_banco = carregar_banco_horas(comp)
-    rows_setor = carregar_banco_setor(comp)
 
     if rows_banco is None:
         st.error("Tabela `rh_banco_horas` não encontrada no Supabase. Rode `sql/003_rh_banco_horas_folha_ponto.sql`.")
     elif not rows_banco:
         st.info("Sem dados de banco de horas lançados para esta competência.")
     else:
-        _render_banco_horas(rows_banco, rows_setor, nomes_rh, cargos_rh)
+        _render_banco_horas(rows_banco, nomes_rh, cargos_rh)
 
 with tab_absenteismo:
     rows_ponto = carregar_ponto_mensal(comp)
