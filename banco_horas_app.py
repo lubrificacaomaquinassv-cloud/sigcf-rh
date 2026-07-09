@@ -6,6 +6,8 @@ empresa decida pagar o saldo. NÃO exibe folha de pagamento, salário bruto/
 líquido, encargos ou descontos — esse é um painel separado do SIGRH de
 justificativa de faltas (rh_app.py).
 """
+import unicodedata
+
 import streamlit as st
 import pandas as pd
 from datetime import date
@@ -30,6 +32,54 @@ MESES_PT = [
     "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
     "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
 ]
+
+DATA_IMPLANTACAO = "21/07/24"
+
+
+def _norm(s: str) -> str:
+    t = unicodedata.normalize("NFKD", str(s or ""))
+    t = "".join(c for c in t if not unicodedata.combining(c))
+    return t.strip().upper()
+
+
+# Agrupamento dos setores individuais (dim_rh.setor) em macro-grupos, seguindo
+# a organização real da fazenda — no cartão-ponto/extrato cada setor aparece
+# desmembrado, mas para gestão faz mais sentido enxergar por grupo.
+GRUPO_SETOR = {
+    "ADMINISTRACAO": "Administração",
+    "ALMOXARIFADO": "Administração",
+    "SEG. MEDICINA TRABALHO": "Administração",
+    "SERVICOS GERAIS": "Administração",
+    "VEICULOS": "Logística",
+    "MAQUINAS / TRATORES": "Mecanização",
+    "OFICINA": "Mecanização",
+    "MANUTENCAO GERAL": "Mecanização",
+    "HIDRAULICA": "Mecanização",
+    "AUTOCLAVE (INDUSTRIA)": "Autoclave",
+    "CORTE DE EUCALIPTO": "Reflorestamento",
+    "VIVEIRO FLORESTAL": "Reflorestamento",
+    "PLANTIO": "Pecuária",
+    "FABRICA DE SAL": "Pecuária",
+    "SEDE / PECUARIA": "Pecuária",
+    "RETIRO AGUA BRANCA": "Pecuária",
+    "RETIRO BARRA DO CERVO": "Pecuária",
+    "RETIRO CORREGO DO CAMPO": "Pecuária",
+    "RETIRO EUCALIPTO": "Pecuária",
+    "RETIRO POCO AZUL": "Pecuária",
+    "RETIRO TAQUARUSSU": "Pecuária",
+}
+
+
+def grupo_do_setor(setor: str) -> str:
+    chave = _norm(setor)
+    if chave in GRUPO_SETOR:
+        return GRUPO_SETOR[chave]
+    if chave.startswith("RETIRO"):
+        return "Pecuária"
+    return "Outros"
+
+
+GRUPOS_ORDENADOS = ["Todos"] + sorted({*GRUPO_SETOR.values()})
 
 exigir_acesso("BANCO DE HORAS — SANTA VERGÍNIA", "Painel exclusivo de banco de horas")
 
@@ -157,6 +207,20 @@ def carregar_ponto_tipos(comp: str):
 
 
 def _render_banco_horas(rows_banco, rows_setor, nomes_rh, cargos_rh):
+    grupo_sel = st.selectbox(
+        "🗂️ Grupo", GRUPOS_ORDENADOS, key="bh_grupo_filtro",
+        help="Agrupamento por área: Pecuária (retiros, plantio, fábrica de sal), "
+             "Logística (veículos), Mecanização (máquinas/tratores, oficina), "
+             "Administração, Autoclave e Reflorestamento (corte de eucalipto/viveiro).",
+    )
+    if grupo_sel != "Todos":
+        rows_banco = [r for r in rows_banco if grupo_do_setor(r.get("setor")) == grupo_sel]
+        if rows_setor:
+            rows_setor = [r for r in rows_setor if grupo_do_setor(r.get("setor")) == grupo_sel]
+        if not rows_banco:
+            st.info(f"Nenhum colaborador com dados de banco de horas no grupo '{grupo_sel}'.")
+            return
+
     qtde_gerada_mes = sum(float(r.get("saldo_mes") or 0) for r in rows_banco)
     saldo_acumulado_total = sum(float(r.get("saldo_acumulado") or 0) for r in rows_banco)
     valor_total_geral = sum(float(r.get("valor_total") or 0) for r in rows_banco)
@@ -214,19 +278,20 @@ def _render_banco_horas(rows_banco, rows_setor, nomes_rh, cargos_rh):
         )
 
     with col_rank:
-        st.markdown('<div class="sec">🔎 Consulta individual — maior → menor saldo</div>', unsafe_allow_html=True)
+        st.markdown('<div class="sec">🔎 Consulta individual</div>', unsafe_allow_html=True)
         ranking = sorted(rows_banco, key=lambda r: float(r.get("saldo_acumulado") or 0), reverse=True)
+        alfabetico = sorted(rows_banco, key=lambda r: _norm(nomes_rh.get(r["id_rh"], r["id_rh"])))
         opcoes_rank = [
             f"{nomes_rh.get(r['id_rh'], r['id_rh'])} — {float(r.get('saldo_acumulado') or 0):.1f} h"
-            for r in ranking
+            for r in alfabetico
         ]
         idx_sel = st.selectbox(
-            "Colaborador (ordem decrescente de saldo)",
+            "Colaborador (ordem alfabética)",
             options=list(range(len(opcoes_rank))),
             format_func=lambda i: opcoes_rank[i],
             key="sel_banco_ranking",
         )
-        r_sel = ranking[idx_sel]
+        r_sel = alfabetico[idx_sel]
         vs1, vs2 = st.columns(2)
         vs1.metric("Quantidade (saldo)", f"{float(r_sel.get('saldo_acumulado') or 0):.1f} h")
         vs2.metric("Valor se pago", fmt_moeda(r_sel.get("valor_total")))
@@ -270,6 +335,15 @@ TIPOS_AFASTAMENTO_REAL = {
 
 
 def _render_absenteismo(rows_ponto, rows_tipos, nomes_rh, cargos_rh):
+    grupo_sel = st.selectbox("🗂️ Grupo", GRUPOS_ORDENADOS, key="abs_grupo_filtro")
+    if grupo_sel != "Todos":
+        ids_grupo = {r["id_rh"] for r in rows_ponto if grupo_do_setor(r.get("setor")) == grupo_sel}
+        rows_ponto = [r for r in rows_ponto if r["id_rh"] in ids_grupo]
+        rows_tipos = [t for t in rows_tipos if t["id_rh"] in ids_grupo]
+        if not rows_ponto:
+            st.info(f"Nenhum colaborador com registro de ponto no grupo '{grupo_sel}'.")
+            return
+
     total_colaboradores = len(rows_ponto)
     ids_afastados = {t["id_rh"] for t in rows_tipos if t.get("tipo") in TIPOS_AFASTAMENTO_REAL}
     dias_falta_total = sum(float(r.get("dias_falta") or 0) for r in rows_ponto)
@@ -364,6 +438,7 @@ with col_logo:
 with col_titulo:
     st.title("⏱️ Banco de Horas")
     st.caption("SANTA VERGÍNIA · SALDO, GERAÇÃO MENSAL E VALOR ESTIMADO POR SETOR/COLABORADOR")
+    st.caption(f"📌 Banco de Horas foi implantado em {DATA_IMPLANTACAO}")
 
 st.divider()
 
