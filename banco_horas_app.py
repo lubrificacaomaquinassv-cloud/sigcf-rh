@@ -306,13 +306,9 @@ def _render_demissoes(rows_dem, nomes_rh, cargos_rh):
 
     total = len(rows_dem)
     grupos = {}
-    custo_grupo = {}
     for r in rows_dem:
         g = grupo_do_setor(r.get("setor"))
         grupos[g] = grupos.get(g, 0) + 1
-        v = float(r.get("valor_liquido_rescisao") or 0)
-        if v:
-            custo_grupo[g] = custo_grupo.get(g, 0.0) + v
     grupo_top = max(grupos, key=grupos.get) if grupos else "—"
     custo_total = sum(float(r.get("valor_liquido_rescisao") or 0) for r in rows_dem)
     com_custo = sum(1 for r in rows_dem if float(r.get("valor_liquido_rescisao") or 0) > 0)
@@ -322,58 +318,14 @@ def _render_demissoes(rows_dem, nomes_rh, cargos_rh):
     k2.metric("Custo rescisões (líquido)", fmt_moeda(custo_total) if custo_total else "—")
     k3.metric("Com valor informado", f"{com_custo}/{total}")
     k4.metric("Grupo com mais demissões", f"{grupo_top} ({grupos.get(grupo_top, 0)})")
-    st.caption(
-        "Fonte: Relatório RH Demissão + Termo de Quitação (PDF). "
-        "Custo = valor líquido pago na rescisão. Importe os PDFs com "
-        "`gerar_sql_rescisoes_pdf.py` para preencher causa, código e valor."
-    )
+    st.caption("Fonte: Relatório RH Demissão + Termo de Quitação (PDF).")
 
-    st.divider()
-
-    col_grupos, col_rank = st.columns([1.2, 1])
-    with col_grupos:
-        st.markdown('<div class="sec">🏢 Demissões por grupo</div>', unsafe_allow_html=True)
-        df_grupos = pd.DataFrame([
-            {
-                "Grupo": g,
-                "Qtd": q,
-                "Custo (R$)": fmt_moeda(custo_grupo.get(g, 0)) if custo_grupo.get(g) else "—",
-            }
-            for g, q in sorted(grupos.items(), key=lambda kv: kv[1], reverse=True)
-        ])
-        dark_table(df_grupos, height=220)
-
-    with col_rank:
-        st.markdown('<div class="sec">🔎 Consulta individual</div>', unsafe_allow_html=True)
-        ordenados = sorted(rows_dem, key=lambda r: _norm(r.get("nome") or ""))
-        opcoes = [
-            f"{r.get('nome')} — {fmt_data(r.get('data_rescisao'))}"
-            for r in ordenados
-        ]
-        idx = st.selectbox(
-            "Colaborador",
-            options=list(range(len(opcoes))),
-            format_func=lambda i: opcoes[i],
-            key="sel_demissao_ranking",
-        )
-        r_sel = ordenados[idx]
-        c1, c2 = st.columns(2)
-        c1.metric("Valor líquido rescisão", fmt_moeda(r_sel.get("valor_liquido_rescisao")) if r_sel.get("valor_liquido_rescisao") else "—")
-        c2.metric("Data rescisão", fmt_data(r_sel.get("data_rescisao")))
-        c3, c4 = st.columns(2)
-        c3.metric("Setor", r_sel.get("setor") or "—")
-        c4.metric("Cargo", r_sel.get("cargo") or "—")
-        if r_sel.get("causa_rescisao"):
-            st.caption(f"Motivo: {r_sel.get('causa_rescisao')}")
-        if r_sel.get("codigo_afastamento"):
-            st.caption(f"Código afastamento: {r_sel.get('codigo_afastamento')}")
-
-    st.divider()
     st.markdown('<div class="sec">📤 Demissões realizadas no mês</div>', unsafe_allow_html=True)
     df_ind = pd.DataFrame([
         {
-            "Colaborador": r.get("nome") or "—",
+            "Nome": r.get("nome") or "—",
             "Grupo": grupo_do_setor(r.get("setor")),
+            "Cargo": r.get("cargo") or "—",
             "Setor": r.get("setor") or "—",
             "Rescisão": fmt_data(r.get("data_rescisao")),
             "Valor líquido": fmt_moeda(r.get("valor_liquido_rescisao")) if r.get("valor_liquido_rescisao") else "—",
@@ -382,7 +334,7 @@ def _render_demissoes(rows_dem, nomes_rh, cargos_rh):
         }
         for r in sorted(rows_dem, key=lambda r: r.get("data_rescisao") or "")
     ])
-    dark_table(df_ind, height=380)
+    dark_table(df_ind, height=420)
 
 
 def _render_banco_horas(rows_banco, nomes_rh, cargos_rh):
