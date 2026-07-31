@@ -15,8 +15,8 @@ from supabase import create_client
 from sigcf_auth import exigir_acesso, logo_html
 
 st.set_page_config(
-    page_title="Banco de Horas — SANTA VERGÍNIA",
-    page_icon="⏱️",
+    page_title="Painel RH — SANTA VERGÍNIA",
+    page_icon="👥",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -25,6 +25,8 @@ BG_URL = "https://media.bio.site/sites/32a25c2c-d6fa-4dfc-bdc2-27e4d35d7ea2/AhS9
 T_BANCO = "rh_banco_horas"
 T_PONTO = "rh_ponto_mensal"
 T_PONTO_TIPOS = "rh_ponto_tipos_mensal"
+T_ADMISSOES = "rh_admissoes_mensal"
+T_DEMISSOES = "rh_demissoes_mensal"
 DIM_RH = "dim_rh"
 
 MESES_PT = [
@@ -108,6 +110,21 @@ div[data-baseweb="popover"] li{color:#1a2818!important;}
 div[data-testid="stMetric"]{background:rgba(13,24,12,0.88);border:1px solid #2a3d28;border-radius:10px;padding:10px 14px;}
 div[data-testid="stMetric"] label{color:#9ab892!important;}
 div[data-testid="stMetricValue"]{color:#8ec486!important;font-family:'Barlow Condensed',sans-serif;}
+.stTabs [data-baseweb="tab-list"]{gap:0;border-bottom:1px solid #2a3d28;}
+.stTabs [data-baseweb="tab"]{
+ color:#9ab892!important;font-family:'Barlow Condensed',sans-serif;
+ font-size:15px;font-weight:600;letter-spacing:0.5px;
+ background:transparent!important;border:none!important;
+ padding:10px 18px!important;}
+.stTabs [data-baseweb="tab"]:hover{color:#c8ddb8!important;}
+.stTabs [aria-selected="true"]{
+ color:#e8edd0!important;border-bottom:3px solid #5a9452!important;
+ background:transparent!important;}
+.stTabs [data-baseweb="tab-panel"]{padding-top:18px;}
+div[data-testid="stSegmentedControl"]{background:rgba(13,24,12,0.6)!important;
+ border:1px solid #2a3d28;border-radius:10px;padding:4px;}
+div[data-testid="stSegmentedControl"] button{
+ font-family:'Barlow Condensed',sans-serif!important;font-size:13px!important;}
 </style>
 """.replace("__BG__", BG_URL), unsafe_allow_html=True)
 
@@ -197,13 +214,188 @@ def carregar_ponto_tipos(comp: str):
         return None
 
 
-def _render_banco_horas(rows_banco, nomes_rh, cargos_rh):
-    grupo_sel = st.selectbox(
-        "🗂️ Grupo", GRUPOS_ORDENADOS, key="bh_grupo_filtro",
-        help="Agrupamento por área: Pecuária (retiros, plantio, fábrica de sal), "
-             "Logística (veículos), Mecanização (máquinas/tratores, oficina), "
-             "Administração, Autoclave e Reflorestamento (corte de eucalipto/viveiro).",
+@st.cache_data(ttl=15)
+def carregar_admissoes(comp: str):
+    try:
+        return sb.table(T_ADMISSOES).select("*").eq("competencia", comp).order("data_admissao").execute().data or []
+    except Exception:
+        return None
+
+
+@st.cache_data(ttl=15)
+def carregar_demissoes(comp: str):
+    try:
+        return sb.table(T_DEMISSOES).select("*").eq("competencia", comp).order("data_rescisao").execute().data or []
+    except Exception:
+        return None
+
+
+def fmt_data(val) -> str:
+    if not val:
+        return "—"
+    s = str(val)[:10]
+    try:
+        parts = s.split("-")
+        if len(parts) == 3:
+            return f"{parts[2]}/{parts[1]}/{parts[0]}"
+    except Exception:
+        pass
+    return s
+
+
+def selecionar_grupo(key: str) -> str:
+    """Filtro por macro-grupo no estilo abas (segmented control)."""
+    return st.segmented_control(
+        "Grupo",
+        options=GRUPOS_ORDENADOS,
+        default="Todos",
+        key=key,
+        label_visibility="collapsed",
     )
+
+
+def _render_admissoes(rows_adm, nomes_rh, cargos_rh):
+    grupo_sel = selecionar_grupo("adm_grupo_filtro")
+    if grupo_sel != "Todos":
+        rows_adm = [r for r in rows_adm if grupo_do_setor(r.get("setor")) == grupo_sel]
+        if not rows_adm:
+            st.info(f"Nenhuma contratação no grupo '{grupo_sel}' nesta competência.")
+            return
+
+    total = len(rows_adm)
+    grupos = {}
+    for r in rows_adm:
+        g = grupo_do_setor(r.get("setor"))
+        grupos[g] = grupos.get(g, 0) + 1
+    grupo_top = max(grupos, key=grupos.get) if grupos else "—"
+
+    k1, k2, k3 = st.columns(3)
+    k1.metric("Contratações no mês", total)
+    k2.metric("Grupos com admissão", len(grupos))
+    k3.metric("Grupo com mais admissões", f"{grupo_top} ({grupos.get(grupo_top, 0)})")
+    st.caption("Fonte: Relatório RH Admissão — contratações com data de admissão dentro da competência selecionada.")
+
+    st.divider()
+
+    col_grupos, col_rank = st.columns([1.2, 1])
+    with col_grupos:
+        st.markdown('<div class="sec">🏢 Contratações por grupo</div>', unsafe_allow_html=True)
+        df_grupos = pd.DataFrame([
+            {"Grupo": g, "Quantidade": q}
+            for g, q in sorted(grupos.items(), key=lambda kv: kv[1], reverse=True)
+        ])
+        dark_table(df_grupos, height=220)
+
+    with col_rank:
+        st.markdown('<div class="sec">🔎 Consulta individual</div>', unsafe_allow_html=True)
+        ordenados = sorted(rows_adm, key=lambda r: _norm(r.get("nome") or ""))
+        opcoes = [
+            f"{r.get('nome')} — {fmt_data(r.get('data_admissao'))}"
+            for r in ordenados
+        ]
+        idx = st.selectbox(
+            "Colaborador",
+            options=list(range(len(opcoes))),
+            format_func=lambda i: opcoes[i],
+            key="sel_admissao_ranking",
+        )
+        r_sel = ordenados[idx]
+        c1, c2 = st.columns(2)
+        c1.metric("Data admissão", fmt_data(r_sel.get("data_admissao")))
+        c2.metric("Setor", r_sel.get("setor") or "—")
+        c3, c4 = st.columns(2)
+        c3.metric("Cargo", r_sel.get("cargo") or "—")
+        c4.metric("Grupo", grupo_do_setor(r_sel.get("setor")))
+
+    st.divider()
+    st.markdown('<div class="sec">➕ Contratações realizadas no mês</div>', unsafe_allow_html=True)
+    df_ind = pd.DataFrame([
+        {
+            "Colaborador": r.get("nome") or "—",
+            "Grupo": grupo_do_setor(r.get("setor")),
+            "Setor": r.get("setor") or "—",
+            "Cargo": r.get("cargo") or "—",
+            "CBO": r.get("cbo") or "—",
+            "Admissão": fmt_data(r.get("data_admissao")),
+            "CPF": r.get("cpf") or "—",
+        }
+        for r in sorted(rows_adm, key=lambda r: r.get("data_admissao") or "")
+    ])
+    dark_table(df_ind, height=320)
+
+
+def _render_demissoes(rows_dem, nomes_rh, cargos_rh):
+    grupo_sel = selecionar_grupo("dem_grupo_filtro")
+    if grupo_sel != "Todos":
+        rows_dem = [r for r in rows_dem if grupo_do_setor(r.get("setor")) == grupo_sel]
+        if not rows_dem:
+            st.info(f"Nenhuma demissão no grupo '{grupo_sel}' nesta competência.")
+            return
+
+    total = len(rows_dem)
+    grupos = {}
+    for r in rows_dem:
+        g = grupo_do_setor(r.get("setor"))
+        grupos[g] = grupos.get(g, 0) + 1
+    grupo_top = max(grupos, key=grupos.get) if grupos else "—"
+
+    k1, k2, k3 = st.columns(3)
+    k1.metric("Demissões no mês", total)
+    k2.metric("Grupos com demissão", len(grupos))
+    k3.metric("Grupo com mais demissões", f"{grupo_top} ({grupos.get(grupo_top, 0)})")
+    st.caption("Fonte: Relatório RH Demissão — rescisões com data de desligamento dentro da competência selecionada.")
+
+    st.divider()
+
+    col_grupos, col_rank = st.columns([1.2, 1])
+    with col_grupos:
+        st.markdown('<div class="sec">🏢 Demissões por grupo</div>', unsafe_allow_html=True)
+        df_grupos = pd.DataFrame([
+            {"Grupo": g, "Quantidade": q}
+            for g, q in sorted(grupos.items(), key=lambda kv: kv[1], reverse=True)
+        ])
+        dark_table(df_grupos, height=220)
+
+    with col_rank:
+        st.markdown('<div class="sec">🔎 Consulta individual</div>', unsafe_allow_html=True)
+        ordenados = sorted(rows_dem, key=lambda r: _norm(r.get("nome") or ""))
+        opcoes = [
+            f"{r.get('nome')} — {fmt_data(r.get('data_rescisao'))}"
+            for r in ordenados
+        ]
+        idx = st.selectbox(
+            "Colaborador",
+            options=list(range(len(opcoes))),
+            format_func=lambda i: opcoes[i],
+            key="sel_demissao_ranking",
+        )
+        r_sel = ordenados[idx]
+        c1, c2 = st.columns(2)
+        c1.metric("Data rescisão", fmt_data(r_sel.get("data_rescisao")))
+        c2.metric("Data admissão", fmt_data(r_sel.get("data_admissao")))
+        c3, c4 = st.columns(2)
+        c3.metric("Setor", r_sel.get("setor") or "—")
+        c4.metric("Cargo", r_sel.get("cargo") or "—")
+
+    st.divider()
+    st.markdown('<div class="sec">📤 Demissões realizadas no mês</div>', unsafe_allow_html=True)
+    df_ind = pd.DataFrame([
+        {
+            "Colaborador": r.get("nome") or "—",
+            "Grupo": grupo_do_setor(r.get("setor")),
+            "Setor": r.get("setor") or "—",
+            "Cargo": r.get("cargo") or "—",
+            "Admissão": fmt_data(r.get("data_admissao")),
+            "Rescisão": fmt_data(r.get("data_rescisao")),
+            "CPF": r.get("cpf") or "—",
+        }
+        for r in sorted(rows_dem, key=lambda r: r.get("data_rescisao") or "")
+    ])
+    dark_table(df_ind, height=380)
+
+
+def _render_banco_horas(rows_banco, nomes_rh, cargos_rh):
+    grupo_sel = selecionar_grupo("bh_grupo_filtro")
     if grupo_sel != "Todos":
         rows_banco = [r for r in rows_banco if grupo_do_setor(r.get("setor")) == grupo_sel]
         if not rows_banco:
@@ -331,7 +523,7 @@ TIPOS_AFASTAMENTO_REAL = {
 
 
 def _render_absenteismo(rows_ponto, rows_tipos, nomes_rh, cargos_rh):
-    grupo_sel = st.selectbox("🗂️ Grupo", GRUPOS_ORDENADOS, key="abs_grupo_filtro")
+    grupo_sel = selecionar_grupo("abs_grupo_filtro")
     if grupo_sel != "Todos":
         ids_grupo = {r["id_rh"] for r in rows_ponto if grupo_do_setor(r.get("setor")) == grupo_sel}
         rows_ponto = [r for r in rows_ponto if r["id_rh"] in ids_grupo]
@@ -432,9 +624,9 @@ col_logo, col_titulo = st.columns([1.1, 5.9])
 with col_logo:
     st.markdown(logo_html(110), unsafe_allow_html=True)
 with col_titulo:
-    st.title("⏱️ Banco de Horas")
-    st.caption("SANTA VERGÍNIA · SALDO, GERAÇÃO MENSAL E VALOR ESTIMADO POR SETOR/COLABORADOR")
-    st.caption(f"📌 Banco de Horas foi implantado em {DATA_IMPLANTACAO}")
+    st.title("👥 Painel RH")
+    st.caption("SANTA VERGÍNIA · BANCO DE HORAS · ABSENTEÍSMO · CONTRATAÇÕES · DEMISSÕES")
+    st.caption(f"📌 Banco de Horas implantado em {DATA_IMPLANTACAO}")
 
 st.divider()
 
@@ -457,7 +649,12 @@ funcionarios_rh = carregar_funcionarios_rh()
 nomes_rh = {f["id_rh"]: f["nome"] for f in funcionarios_rh}
 cargos_rh = {f["id_rh"]: (f.get("cargo") or "—") for f in funcionarios_rh}
 
-tab_banco, tab_absenteismo = st.tabs(["⏱️ Banco de Horas", "📊 Absenteísmo"])
+tab_banco, tab_absenteismo, tab_admissoes, tab_demissoes = st.tabs([
+    "⏱️ Banco de Horas",
+    "📊 Absenteísmo",
+    "➕ Contratações",
+    "📤 Demissões",
+])
 
 with tab_banco:
     rows_banco = carregar_banco_horas(comp)
@@ -479,3 +676,23 @@ with tab_absenteismo:
         st.info("Sem dados de ponto/absenteísmo lançados para esta competência.")
     else:
         _render_absenteismo(rows_ponto, rows_tipos or [], nomes_rh, cargos_rh)
+
+with tab_admissoes:
+    rows_adm = carregar_admissoes(comp)
+
+    if rows_adm is None:
+        st.error("Tabela `rh_admissoes_mensal` não encontrada no Supabase. Rode `sql/007_rh_admissoes_demissoes.sql`.")
+    elif not rows_adm:
+        st.info("Sem contratações registradas para esta competência.")
+    else:
+        _render_admissoes(rows_adm, nomes_rh, cargos_rh)
+
+with tab_demissoes:
+    rows_dem = carregar_demissoes(comp)
+
+    if rows_dem is None:
+        st.error("Tabela `rh_demissoes_mensal` não encontrada no Supabase. Rode `sql/007_rh_admissoes_demissoes.sql`.")
+    elif not rows_dem:
+        st.info("Sem demissões registradas para esta competência.")
+    else:
+        _render_demissoes(rows_dem, nomes_rh, cargos_rh)

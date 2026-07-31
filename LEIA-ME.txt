@@ -28,9 +28,21 @@ repo, "Main file path" diferente), pois são públicos distintos:
    Secrets: SUPABASE_URL, SUPABASE_KEY, APP_PIN
 
 2) Painel de Banco de Horas (RH/gestão — saldo, HE, absenteísmo real
-   do cartão-ponto)
+   do cartão-ponto, contratações e demissões do mês)
    Main file: banco_horas_app.py
    Secrets: SUPABASE_URL, SUPABASE_KEY, APP_PIN (mesmos do app 1)
+
+CONTRATAÇÕES E DEMISSÕES (mensal)
+---------------------------------
+1. Supabase → SQL Editor → sql/007_rh_admissoes_demissoes.sql → Run (uma vez)
+2. Exportar do sistema de folha:
+   - Relatorio RH_Admissão.Xls
+   - Relatorio RH_Demissão.Xls
+   (salvar em Desktop\RH ou ajustar caminhos em gerar_sql_admissoes_demissoes.py)
+3. Gerar SQL:
+   python gerar_sql_admissoes_demissoes.py 2026 6
+4. Cole sql/008_import_admissoes_demissoes_YYYYMM.sql no Supabase
+5. No painel (banco_horas_app.py), abas "Contratações" e "Demissões"
 
 Como publicar o app 2 (se ainda não existir):
    a. share.streamlit.io → "New app"
