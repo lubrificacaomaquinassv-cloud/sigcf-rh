@@ -125,6 +125,11 @@ div[data-testid="stSegmentedControl"]{background:rgba(13,24,12,0.6)!important;
  border:1px solid #2a3d28;border-radius:10px;padding:4px;}
 div[data-testid="stSegmentedControl"] button{
  font-family:'Barlow Condensed',sans-serif!important;font-size:13px!important;}
+.painel-rh-titulo{
+ font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;color:#e8edd0!important;
+ font-size:2.25rem;font-weight:600;margin:0;padding:0;
+ display:flex;align-items:center;gap:12px;line-height:1.1;}
+.painel-rh-ico{width:34px;height:34px;fill:#e8edd0;flex-shrink:0;}
 </style>
 """.replace("__BG__", BG_URL), unsafe_allow_html=True)
 
@@ -334,16 +339,27 @@ def _render_demissoes(rows_dem, nomes_rh, cargos_rh):
 
     total = len(rows_dem)
     grupos = {}
+    custo_grupo = {}
     for r in rows_dem:
         g = grupo_do_setor(r.get("setor"))
         grupos[g] = grupos.get(g, 0) + 1
+        v = float(r.get("valor_liquido_rescisao") or 0)
+        if v:
+            custo_grupo[g] = custo_grupo.get(g, 0.0) + v
     grupo_top = max(grupos, key=grupos.get) if grupos else "—"
+    custo_total = sum(float(r.get("valor_liquido_rescisao") or 0) for r in rows_dem)
+    com_custo = sum(1 for r in rows_dem if float(r.get("valor_liquido_rescisao") or 0) > 0)
 
-    k1, k2, k3 = st.columns(3)
+    k1, k2, k3, k4 = st.columns(4)
     k1.metric("Demissões no mês", total)
-    k2.metric("Grupos com demissão", len(grupos))
-    k3.metric("Grupo com mais demissões", f"{grupo_top} ({grupos.get(grupo_top, 0)})")
-    st.caption("Fonte: Relatório RH Demissão — rescisões com data de desligamento dentro da competência selecionada.")
+    k2.metric("Custo rescisões (líquido)", fmt_moeda(custo_total) if custo_total else "—")
+    k3.metric("Com valor informado", f"{com_custo}/{total}")
+    k4.metric("Grupo com mais demissões", f"{grupo_top} ({grupos.get(grupo_top, 0)})")
+    st.caption(
+        "Fonte: Relatório RH Demissão + Termo de Quitação (PDF). "
+        "Custo = valor líquido pago na rescisão. Importe os PDFs com "
+        "`gerar_sql_rescisoes_pdf.py` para preencher causa, código e valor."
+    )
 
     st.divider()
 
@@ -351,7 +367,11 @@ def _render_demissoes(rows_dem, nomes_rh, cargos_rh):
     with col_grupos:
         st.markdown('<div class="sec">🏢 Demissões por grupo</div>', unsafe_allow_html=True)
         df_grupos = pd.DataFrame([
-            {"Grupo": g, "Quantidade": q}
+            {
+                "Grupo": g,
+                "Qtd": q,
+                "Custo (R$)": fmt_moeda(custo_grupo.get(g, 0)) if custo_grupo.get(g) else "—",
+            }
             for g, q in sorted(grupos.items(), key=lambda kv: kv[1], reverse=True)
         ])
         dark_table(df_grupos, height=220)
@@ -371,11 +391,15 @@ def _render_demissoes(rows_dem, nomes_rh, cargos_rh):
         )
         r_sel = ordenados[idx]
         c1, c2 = st.columns(2)
-        c1.metric("Data rescisão", fmt_data(r_sel.get("data_rescisao")))
-        c2.metric("Data admissão", fmt_data(r_sel.get("data_admissao")))
+        c1.metric("Valor líquido rescisão", fmt_moeda(r_sel.get("valor_liquido_rescisao")) if r_sel.get("valor_liquido_rescisao") else "—")
+        c2.metric("Data rescisão", fmt_data(r_sel.get("data_rescisao")))
         c3, c4 = st.columns(2)
         c3.metric("Setor", r_sel.get("setor") or "—")
         c4.metric("Cargo", r_sel.get("cargo") or "—")
+        if r_sel.get("causa_rescisao"):
+            st.caption(f"Motivo: {r_sel.get('causa_rescisao')}")
+        if r_sel.get("codigo_afastamento"):
+            st.caption(f"Código afastamento: {r_sel.get('codigo_afastamento')}")
 
     st.divider()
     st.markdown('<div class="sec">📤 Demissões realizadas no mês</div>', unsafe_allow_html=True)
@@ -384,10 +408,10 @@ def _render_demissoes(rows_dem, nomes_rh, cargos_rh):
             "Colaborador": r.get("nome") or "—",
             "Grupo": grupo_do_setor(r.get("setor")),
             "Setor": r.get("setor") or "—",
-            "Cargo": r.get("cargo") or "—",
-            "Admissão": fmt_data(r.get("data_admissao")),
             "Rescisão": fmt_data(r.get("data_rescisao")),
-            "CPF": r.get("cpf") or "—",
+            "Valor líquido": fmt_moeda(r.get("valor_liquido_rescisao")) if r.get("valor_liquido_rescisao") else "—",
+            "Motivo": (r.get("causa_rescisao") or "—")[:50],
+            "Cód.": r.get("codigo_afastamento") or "—",
         }
         for r in sorted(rows_dem, key=lambda r: r.get("data_rescisao") or "")
     ])
@@ -624,7 +648,13 @@ col_logo, col_titulo = st.columns([1.1, 5.9])
 with col_logo:
     st.markdown(logo_html(110), unsafe_allow_html=True)
 with col_titulo:
-    st.title("👥 Painel RH")
+    st.markdown(
+        '<h1 class="painel-rh-titulo">'
+        '<svg class="painel-rh-ico" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">'
+        '<path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>'
+        '</svg>Painel RH</h1>',
+        unsafe_allow_html=True,
+    )
     st.caption("SANTA VERGÍNIA · BANCO DE HORAS · ABSENTEÍSMO · CONTRATAÇÕES · DEMISSÕES")
     st.caption(f"📌 Banco de Horas implantado em {DATA_IMPLANTACAO}")
 

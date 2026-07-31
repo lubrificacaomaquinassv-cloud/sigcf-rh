@@ -44,6 +44,24 @@ CONTRATAÇÕES E DEMISSÕES (mensal)
 4. Cole sql/008_import_admissoes_demissoes_YYYYMM.sql no Supabase
 5. No painel (banco_horas_app.py), abas "Contratações" e "Demissões"
 
+RESCISÕES — CUSTO E DADOS DO PDF (Termo de Quitação)
+----------------------------------------------------
+FORMA MAIS FÁCIL (não gasta internet, processa no seu PC):
+
+  1. Coloque os PDFs em: C:\Users\hmauricio\Desktop\RH
+  2. Duplo clique em: importar_rescisoes.bat
+  3. Abra sql/010_update_rescisoes_pdf.sql e cole no Supabase
+
+Pré-requisitos no Supabase (uma vez):
+  - sql/009_rh_demissoes_rescisao_cols.sql (colunas de custo)
+
+PDFs escaneados (só imagem, sem texto):
+  - Ana Isa, Jose Maria, Paulo Junior — preencha rescisoes_manual.csv
+  - Rode importar_rescisoes.bat de novo
+
+Campos extraídos: valor líquido, causa, código RA2/SJ1/SJ2 etc.
+Relatório: sql/010_rescisoes_relatorio.txt
+
 Como publicar o app 2 (se ainda não existir):
    a. share.streamlit.io → "New app"
    b. Repo: lubrificacaomaquinassv-cloud/sigcf-rh · Branch: main
