@@ -280,53 +280,20 @@ def _render_admissoes(rows_adm, nomes_rh, cargos_rh):
     k3.metric("Grupo com mais admissões", f"{grupo_top} ({grupos.get(grupo_top, 0)})")
     st.caption("Fonte: Relatório RH Admissão — contratações com data de admissão dentro da competência selecionada.")
 
-    st.divider()
-
-    col_grupos, col_rank = st.columns([1.2, 1])
-    with col_grupos:
-        st.markdown('<div class="sec">🏢 Contratações por grupo</div>', unsafe_allow_html=True)
-        df_grupos = pd.DataFrame([
-            {"Grupo": g, "Quantidade": q}
-            for g, q in sorted(grupos.items(), key=lambda kv: kv[1], reverse=True)
-        ])
-        dark_table(df_grupos, height=220)
-
-    with col_rank:
-        st.markdown('<div class="sec">🔎 Consulta individual</div>', unsafe_allow_html=True)
-        ordenados = sorted(rows_adm, key=lambda r: _norm(r.get("nome") or ""))
-        opcoes = [
-            f"{r.get('nome')} — {fmt_data(r.get('data_admissao'))}"
-            for r in ordenados
-        ]
-        idx = st.selectbox(
-            "Colaborador",
-            options=list(range(len(opcoes))),
-            format_func=lambda i: opcoes[i],
-            key="sel_admissao_ranking",
-        )
-        r_sel = ordenados[idx]
-        c1, c2 = st.columns(2)
-        c1.metric("Data admissão", fmt_data(r_sel.get("data_admissao")))
-        c2.metric("Setor", r_sel.get("setor") or "—")
-        c3, c4 = st.columns(2)
-        c3.metric("Cargo", r_sel.get("cargo") or "—")
-        c4.metric("Grupo", grupo_do_setor(r_sel.get("setor")))
-
-    st.divider()
     st.markdown('<div class="sec">➕ Contratações realizadas no mês</div>', unsafe_allow_html=True)
     df_ind = pd.DataFrame([
         {
-            "Colaborador": r.get("nome") or "—",
+            "Nome": r.get("nome") or "—",
             "Grupo": grupo_do_setor(r.get("setor")),
-            "Setor": r.get("setor") or "—",
             "Cargo": r.get("cargo") or "—",
+            "Setor": r.get("setor") or "—",
             "CBO": r.get("cbo") or "—",
             "Admissão": fmt_data(r.get("data_admissao")),
             "CPF": r.get("cpf") or "—",
         }
         for r in sorted(rows_adm, key=lambda r: r.get("data_admissao") or "")
     ])
-    dark_table(df_ind, height=320)
+    dark_table(df_ind, height=420)
 
 
 def _render_demissoes(rows_dem, nomes_rh, cargos_rh):
