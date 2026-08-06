@@ -13,6 +13,7 @@ import pandas as pd
 from datetime import date
 from supabase import create_client
 from sigcf_auth import exigir_acesso, logo_html
+from rh_fopa_norm import normalizar_setor
 
 st.set_page_config(
     page_title="Painel RH — SANTA VERGÍNIA",
@@ -72,7 +73,7 @@ GRUPO_SETOR = {
 
 
 def grupo_do_setor(setor: str) -> str:
-    chave = _norm(setor)
+    chave = normalizar_setor(setor) or _norm(setor)
     if chave in GRUPO_SETOR:
         return GRUPO_SETOR[chave]
     if chave.startswith("RETIRO"):
@@ -191,7 +192,7 @@ def dark_table(df: pd.DataFrame, height: int = 320):
 
 @st.cache_data(ttl=15)
 def carregar_funcionarios_rh():
-    res = sb.table(DIM_RH).select("id_rh, nome, setor, cargo").eq("ativo", True).order("nome").execute()
+    res = sb.table(DIM_RH).select("id_rh, nome, setor, cargo, matricula").eq("ativo", True).order("nome").execute()
     return res.data or []
 
 
@@ -595,8 +596,15 @@ with st.sidebar:
     st.caption(f"Competência: **{mes:02d}/{ano}**")
 
 funcionarios_rh = carregar_funcionarios_rh()
-nomes_rh = {f["id_rh"]: f["nome"] for f in funcionarios_rh}
-cargos_rh = {f["id_rh"]: (f.get("cargo") or "—") for f in funcionarios_rh}
+nomes_rh = {}
+cargos_rh = {}
+for f in funcionarios_rh:
+    nomes_rh[f["id_rh"]] = f["nome"]
+    cargos_rh[f["id_rh"]] = f.get("cargo") or "—"
+    mat = str(f.get("matricula") or "").strip()
+    if mat:
+        nomes_rh[mat] = f["nome"]
+        cargos_rh[mat] = f.get("cargo") or "—"
 
 tab_banco, tab_absenteismo, tab_admissoes, tab_demissoes = st.tabs([
     "⏱️ Banco de Horas",
