@@ -7,11 +7,12 @@ st.set_page_config(
     page_title="SIGRH — SANTA VERGÍNIA",
     page_icon="👥",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 BG_URL = "https://media.bio.site/sites/32a25c2c-d6fa-4dfc-bdc2-27e4d35d7ea2/AhS9mKiQxFRXAyMBdXDzEG.jpg"
 TABELA = "rh_justificativa_faltas"
+TABELA_FEEDBACK = "rh_feedback_lideranca"
 
 
 def link_instagram(text: str = "@fazendasantaverginia") -> str:
@@ -34,6 +35,22 @@ TIPOS_JUSTIFICATIVA = [
     "Outros",
 ]
 
+TIPOS_FEEDBACK = [
+    "Elogio / reconhecimento",
+    "Sugestão de melhoria",
+    "Reclamação / insatisfação",
+    "Denúncia / conduta",
+    "Solicitação de apoio RH",
+    "Outros",
+]
+
+OPCOES_REGISTRO_FEEDBACK = [
+    "Registrar feedback positivo",
+    "Registrar ponto de atenção",
+    "Registrar solicitação de ação",
+    "Registrar encerramento / follow-up",
+]
+
 SETORES = [
     "Máquinas",
     "Pecuária",
@@ -52,7 +69,7 @@ MODULOS_RH = [
     {"id": "absenteismo", "nome": "Índice de absenteísmo", "icone": "📊", "ativo": False},
     {"id": "contratacao", "nome": "Solicitação de contratação", "icone": "➕", "ativo": False},
     {"id": "demissao", "nome": "Solicitação de demissão", "icone": "📤", "ativo": False},
-    {"id": "feedback", "nome": "Feedback da liderança", "icone": "💬", "ativo": False},
+    {"id": "feedback", "nome": "Feedback da liderança", "icone": "💬", "ativo": True},
 ]
 
 exigir_acesso("SIGRH — SANTA VERGÍNIA")
@@ -64,18 +81,9 @@ st.markdown("""
  background:linear-gradient(rgba(10,20,9,0.68),rgba(10,20,9,0.82)),
  url('__BG__') center center/cover no-repeat fixed!important;}
 [data-testid="stAppViewContainer"]{background:transparent!important;}
-[data-testid="stSidebar"]{
- background:rgba(13,24,12,0.95)!important;border-right:1px solid #2a3d28!important;}
-[data-testid="stSidebar"] h1,[data-testid="stSidebar"] h2,[data-testid="stSidebar"] h3,
-[data-testid="stSidebar"] p,[data-testid="stSidebar"] span,[data-testid="stSidebar"] label{color:#e8edd0!important;}
-[data-testid="stSidebar"] .sidebar-desc{color:#9ab892!important;font-size:14px;line-height:1.55;margin-top:8px;}
+[data-testid="stSidebar"]{display:none;}
 [data-testid="stHeader"]{background:rgba(10,20,9,0.45)!important;}
-.block-container{background:transparent!important;max-width:1100px!important;}
-[data-testid="stForm"]{
- background:rgba(255,255,255,0.96)!important;border:1px solid #d8e0d4!important;
- border-radius:14px;padding:24px 28px!important;box-shadow:0 4px 24px rgba(0,0,0,0.25);}
-[data-testid="stForm"] label,[data-testid="stForm"] p,[data-testid="stForm"] span{color:#1a2818!important;}
-[data-testid="stForm"] .stCaption{color:#4a6644!important;}
+.block-container{background:transparent!important;max-width:980px!important;}
 h1,h2,h3,h4,p,span,label{color:#e8edd0;}
 h1{font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;}
 .stCaption,[data-testid="stCaptionContainer"] p{color:#9ab892!important;}
@@ -85,7 +93,6 @@ h1{font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;}
 .logo-frame{background:linear-gradient(145deg,#0a1628,#0d2040);border:2px solid #c9a227;
  border-radius:12px;padding:5px;display:inline-block;box-shadow:0 4px 18px rgba(0,0,0,.45);}
 .logo-frame img{display:block;border-radius:8px;}
-.ctx-box{background:rgba(13,24,12,0.88);border:1px solid #2a3d28;border-radius:12px;padding:14px 16px;margin-bottom:12px;}
 .hub-card{background:rgba(17,28,16,0.86);border:1px solid #2a3d28;border-radius:14px;padding:18px 14px;
  text-align:center;min-height:118px;transition:border-color .2s;}
 .hub-card.active{border-color:rgba(90,148,82,0.85);border-top:3px solid #5a9452;}
@@ -101,7 +108,6 @@ h1{font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;}
  text-decoration:none;font-weight:600;}
 .insta-link:hover{color:#a8d8a0!important;text-decoration:none;}
 .insta-ico{width:17px;height:17px;flex-shrink:0;}
-
 .stTextInput input,.stNumberInput input,.stTextArea textarea,
 [data-testid="stDateInput"] input{
  background:#dce6d2!important;color:#1a2818!important;
@@ -119,17 +125,22 @@ div[data-baseweb="popover"] ul{background:#e8edd0!important;}
 div[data-baseweb="popover"] li{color:#1a2818!important;}
 [data-testid="stNumberInput"] button{
  background:#cdd9c4!important;border-color:#4a6644!important;color:#1a2818!important;}
-div[data-testid="stMetric"]{background:rgba(13,24,12,0.88);border:1px solid #2a3d28;border-radius:10px;padding:10px 14px;}
-div[data-testid="stMetric"] label{color:#9ab892!important;}
-div[data-testid="stMetricValue"]{color:#8ec486!important;font-family:'Barlow Condensed',sans-serif;}
-div[data-testid="stRadio"] label span{color:#1a2818!important;}
-[data-testid="stForm"] div[data-testid="stCheckbox"] label span,
-[data-testid="stForm"] div[data-testid="stRadio"] label span{color:#1a2818!important;}
+[data-testid="stForm"]{
+ background:rgba(13,24,12,0.88)!important;border:1px solid #2a3d28!important;
+ border-radius:12px;padding:12px 16px;}
+.stTabs [data-baseweb="tab-list"]{background:rgba(13,24,12,0.88);border-bottom:1px solid #2a3d28;gap:8px;}
+.stTabs [data-baseweb="tab"]{
+ color:#9ab892!important;font-family:'Barlow Condensed',sans-serif;font-weight:600;}
+.stTabs [aria-selected="true"]{color:#e8edd0!important;border-bottom-color:#5a9452!important;}
+.stTabs [data-baseweb="tab-highlight"]{background-color:#5a9452!important;}
+div[data-testid="stCheckbox"] label span{color:#e8edd0!important;}
+div[data-testid="stRadio"] label span{color:#e8edd0!important;}
 .stButton button,[data-testid="stFormSubmitButton"] button{
  background:#4a9e3f!important;color:#ffffff!important;border:1px solid #6fa864!important;
  font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:1.5px;
  text-transform:uppercase;border-radius:8px;min-height:44px;}
 .stButton button:hover,[data-testid="stFormSubmitButton"] button:hover{background:#3d8534!important;}
+.feedback-intro{color:#9ab892;font-size:14px;line-height:1.55;margin:0 0 14px;}
 
 @media (max-width:768px){
  .block-container{padding-left:0.75rem!important;padding-right:0.75rem!important;padding-top:1rem!important;}
@@ -159,7 +170,6 @@ def fmt_data(d) -> str:
 
 
 def ler_credenciais_supabase() -> tuple[str, str]:
-    """Aceita secrets no formato plano (SIGCF) ou seção [supabase]."""
     url = (
         st.secrets.get("SUPABASE_URL")
         or st.secrets.get("supabase_url")
@@ -191,8 +201,6 @@ def diagnosticar_secrets():
         SUPABASE_KEY = "eyJ...sua-anon-key..."
         APP_PIN = "SV2026!x"
         ```
-
-        **Atenção:** sem colchetes `[ ]` no topo, aspas normais `"`, e salvar no app **sigcf-rh** (não em outro).
         """
     )
 
@@ -229,7 +237,29 @@ def funcionario_por_nome(nome: str, lista: list) -> dict | None:
     return None
 
 
+def indice_setor(setor: str) -> int:
+    s = (setor or "Outros").strip()
+    if s in SETORES:
+        return SETORES.index(s)
+    return SETORES.index("Outros")
+
+
+def label_colaborador(info: dict) -> str:
+    return f"{info['nome']} — {info.get('setor') or '—'} — {info.get('cargo') or '—'}"
+
+
+def carregar_lideres(lista: list) -> list:
+    chaves = ("chefe", "líder", "lider", "gerente", "coordenador", "supervisor", "encarregado")
+    lideres = [
+        f for f in lista
+        if any(k in (f.get("cargo") or "").lower() for k in chaves)
+    ]
+    return lideres or lista
+
+
 funcionarios_rh = carregar_funcionarios_rh()
+opcoes_colab = [label_colaborador(f) for f in funcionarios_rh]
+opcoes_lider = [label_colaborador(f) for f in carregar_lideres(funcionarios_rh)]
 
 col_logo, col_titulo, col_acao = st.columns([1.1, 4.9, 1])
 with col_logo:
@@ -264,150 +294,204 @@ for i, mod in enumerate(MODULOS_RH):
 
 st.divider()
 
-with st.sidebar:
-    st.markdown(logo_html(140), unsafe_allow_html=True)
-    st.markdown("### Justificativa de Falta")
+tab_justificativa, tab_feedback = st.tabs([
+    "📋 Nova justificativa",
+    "💬 Feedback da liderança",
+])
+
+with tab_justificativa:
+    st.markdown('<div class="sec">Registrar justificativa de falta</div>', unsafe_allow_html=True)
+
+    if not funcionarios_rh:
+        st.warning("Nenhum funcionário cadastrado. Contate o RH.")
+
+    if opcoes_colab:
+        colab_label = st.selectbox("👤 Funcionário", options=opcoes_colab, key="sel_colab")
+        nome_sel = colab_label.split(" — ", 1)[0]
+        info = funcionario_por_nome(nome_sel, funcionarios_rh) or {}
+        setor_default = indice_setor(info.get("setor"))
+    else:
+        colab_label = ""
+        info = {}
+        setor_default = 0
+        nome_manual = st.text_input("👤 Nome do funcionário", key="nome_manual")
+
+    with st.form("form_falta", clear_on_submit=True):
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            data_falta = st.date_input("📅 Data da falta", value=date.today(), format="DD/MM/YYYY")
+        with c2:
+            dias_ausencia = st.number_input("📆 Dias de ausência", min_value=0.5, max_value=30.0, value=1.0, step=0.5)
+        with c3:
+            possui_atestado = st.checkbox("📎 Possui atestado / declaração")
+
+        c4, c5 = st.columns(2)
+        with c4:
+            setor = st.selectbox("🏢 Setor", options=SETORES, index=setor_default if opcoes_colab else 0)
+        with c5:
+            tipo = st.selectbox("📌 Tipo de justificativa", options=TIPOS_JUSTIFICATIVA)
+
+        motivo = st.text_input("📝 Motivo resumido", placeholder="Ex.: Consulta médica, problema familiar")
+        observacao = st.text_area("💬 Observação (opcional)", height=68)
+        registrado_por = st.text_input("✍️ Registrado por (liderança / RH)", placeholder="Nome de quem registra")
+
+        enviar = st.form_submit_button("✅ Registrar justificativa", type="primary", use_container_width=True)
+
+    if enviar:
+        if opcoes_colab:
+            nome = nome_sel
+            id_rh = info.get("id_rh")
+            cargo = info.get("cargo") or ""
+        else:
+            nome = (nome_manual or "").strip()
+            id_rh = None
+            cargo = ""
+        if not nome:
+            st.warning("Informe o colaborador.")
+        elif not motivo.strip():
+            st.warning("Informe o motivo.")
+        else:
+            registro = {
+                "data_falta": str(data_falta),
+                "id_rh": id_rh,
+                "id_colaborador": id_rh,
+                "nome_colaborador": nome,
+                "setor": setor,
+                "funcao": cargo or None,
+                "tipo_justificativa": tipo,
+                "dias_ausencia": float(dias_ausencia),
+                "possui_atestado": possui_atestado,
+                "motivo": motivo.strip(),
+                "observacao": observacao.strip() or None,
+                "status": "REGISTRADO",
+                "registrado_por": registrado_por.strip() or None,
+            }
+            try:
+                sb.table(TABELA).insert(registro).execute()
+                st.success(f"Justificativa registrada — {nome} · {fmt_data(data_falta)} · {dias_ausencia} dia(s)")
+                st.cache_data.clear()
+                st.rerun()
+            except Exception as e:
+                msg = str(e)
+                if "dim_rh" in msg and "does not exist" in msg.lower():
+                    st.error("Tabela dim_rh não criada. Rode sql/002_dim_rh.sql no Supabase.")
+                elif "rh_justificativa_faltas" in msg and "does not exist" in msg.lower():
+                    st.error("Tabela ainda não criada. Rode sql/001_rh_justificativa_faltas.sql no Supabase.")
+                else:
+                    st.error(f"Erro ao salvar: {e}")
+
+with tab_feedback:
+    st.markdown('<div class="sec">Feedback da liderança</div>', unsafe_allow_html=True)
     st.markdown(
-        '<p class="sidebar-desc">Preencha o formulário para registrar a justificativa '
-        "de ausência do colaborador. Suas informações ajudam o RH a acompanhar faltas "
-        "e manter o índice de absenteísmo atualizado.</p>",
+        '<p class="feedback-intro">Preencha o formulário de feedback da liderança e nos ajude a '
+        "identificar e melhorar os pontos críticos da empresa. Cada resposta é uma peça importante "
+        "para que possamos crescer juntos e criar um ambiente cada vez melhor para trabalhar.</p>",
         unsafe_allow_html=True,
     )
 
-st.markdown('<div class="sec">Justificativa de Falta</div>', unsafe_allow_html=True)
+    if not funcionarios_rh:
+        st.warning("Nenhum colaborador cadastrado. Contate o RH.")
 
-if not funcionarios_rh:
-    st.warning("Nenhum funcionário cadastrado. Contate o RH.")
+    with st.form("form_feedback", clear_on_submit=True):
+        responsavel = st.radio(
+            "Responsável pelo feedback *",
+            options=["RH", "Líder", "Direção", "Encerramento"],
+            horizontal=True,
+        )
 
-opcoes_colab = [
-    f"{f['nome']} — {f.get('setor') or '—'} — {f.get('cargo') or '—'}" for f in funcionarios_rh
-]
+        if opcoes_lider:
+            lider_label = st.selectbox(
+                "Nome do líder do setor *",
+                options=opcoes_lider,
+                index=None,
+                placeholder="Escolha uma opção",
+            )
+        else:
+            lider_label = st.text_input("Nome do líder do setor *", placeholder="Nome completo")
 
-with st.form("form_falta", clear_on_submit=True):
-    registrado_tipo = st.radio(
-        "Registrado por *",
-        options=["RH", "Líder", "Direção"],
-        horizontal=True,
-    )
+        if opcoes_colab:
+            referente_label = st.selectbox(
+                "Referente de realimentação *",
+                options=opcoes_colab,
+                index=None,
+                placeholder="Escolha uma opção",
+            )
+        else:
+            referente_label = st.text_input("Referente de realimentação *", placeholder="Nome completo")
 
-    if opcoes_colab:
-        colab_label = st.selectbox(
-            "Colaborador *",
-            options=opcoes_colab,
+        setor_fb = st.selectbox(
+            "Insira o setor de trabalho da equipe ou do colaborador",
+            options=SETORES,
             index=None,
             placeholder="Escolha uma opção",
         )
-    else:
-        nome_manual = st.text_input("Colaborador *", placeholder="Nome completo do colaborador")
 
-    c1, c2 = st.columns(2)
-    with c1:
-        data_falta = st.date_input("Data da falta *", value=date.today(), format="DD/MM/YYYY")
-    with c2:
-        dias_ausencia = st.number_input(
-            "Dias de ausência *", min_value=0.5, max_value=30.0, value=1.0, step=0.5
+        tipo_fb = st.selectbox(
+            "Qual o tipo desse feedback *",
+            options=TIPOS_FEEDBACK,
+            index=None,
+            placeholder="Escolha uma opção",
         )
 
-    setor = st.selectbox(
-        "Setor de trabalho da equipe ou do colaborador",
-        options=SETORES,
-        index=0,
-    )
+        opcao_registro = st.selectbox(
+            "Qual das opções abaixo gostaria de registrar agora *",
+            options=OPCOES_REGISTRO_FEEDBACK,
+            index=None,
+            placeholder="Escolha uma opção",
+        )
 
-    tipo = st.selectbox(
-        "Tipo de justificativa *",
-        options=TIPOS_JUSTIFICATIVA,
-        index=None,
-        placeholder="Escolha uma opção",
-    )
+        descricao = st.text_area(
+            "Descreva abaixo o máximo de detalhes possíveis sobre o seu feedback *",
+            placeholder="Digite aqui ...",
+            height=120,
+        )
 
-    possui_atestado = st.radio(
-        "Possui atestado ou declaração? *",
-        options=["Sim", "Não"],
-        horizontal=True,
-    )
+        visita_rh = st.radio(
+            "Você acredita ser necessária visita no local do gestor de RH?",
+            options=["Sim", "Não", "Talvez"],
+            horizontal=True,
+        )
 
-    motivo = st.text_input(
-        "Motivo resumido *",
-        placeholder="Ex.: Consulta médica, problema familiar",
-    )
+        enviar_fb = st.form_submit_button("✅ Registrar feedback", type="primary", use_container_width=True)
 
-    observacao = st.text_area(
-        "Descreva abaixo o máximo de detalhes possíveis sobre a justificativa",
-        placeholder="Digite aqui ...",
-        height=120,
-    )
+    if enviar_fb:
+        lider = (lider_label.split(" — ", 1)[0] if opcoes_lider else (lider_label or "").strip())
+        referente = (
+            referente_label.split(" — ", 1)[0] if opcoes_colab else (referente_label or "").strip()
+        )
 
-    registrado_nome = st.text_input(
-        "Nome de quem registra *",
-        placeholder="Nome completo",
-    )
-
-    enviar = st.form_submit_button("Registrar justificativa", type="primary", use_container_width=True)
-
-if enviar:
-    nome = ""
-    id_rh = None
-    cargo = ""
-
-    if opcoes_colab:
-        if not colab_label:
-            st.warning("Selecione o colaborador.")
-            st.stop()
-        nome_sel = colab_label.split(" — ", 1)[0]
-        info = funcionario_por_nome(nome_sel, funcionarios_rh) or {}
-        nome = nome_sel
-        id_rh = info.get("id_rh")
-        cargo = info.get("cargo") or ""
-        if info.get("setor") in SETORES:
-            setor = info.get("setor")
-    else:
-        nome = (nome_manual or "").strip()
-        if not nome:
-            st.warning("Informe o colaborador.")
-            st.stop()
-
-    if not tipo:
-        st.warning("Selecione o tipo de justificativa.")
-    elif not motivo.strip():
-        st.warning("Informe o motivo.")
-    elif not registrado_nome.strip():
-        st.warning("Informe o nome de quem registra.")
-    else:
-        registrado_por = f"{registrado_tipo} — {registrado_nome.strip()}"
-        registro = {
-            "data_falta": str(data_falta),
-            "id_rh": id_rh,
-            "id_colaborador": id_rh,
-            "nome_colaborador": nome,
-            "setor": setor,
-            "funcao": cargo or None,
-            "tipo_justificativa": tipo,
-            "dias_ausencia": float(dias_ausencia),
-            "possui_atestado": possui_atestado == "Sim",
-            "motivo": motivo.strip(),
-            "observacao": observacao.strip() or None,
-            "status": "REGISTRADO",
-            "registrado_por": registrado_por,
-        }
-        try:
-            sb.table(TABELA).insert(registro).execute()
-            st.success(
-                f"Justificativa registrada — {nome} · {fmt_data(data_falta)} · {dias_ausencia} dia(s)"
-            )
-            st.cache_data.clear()
-            st.rerun()
-        except Exception as e:
-            msg = str(e)
-            if "dim_rh" in msg and "does not exist" in msg.lower():
-                st.error("Tabela dim_rh não criada. Rode sql/002_dim_rh.sql no Supabase.")
-            elif "rh_justificativa_faltas" in msg and "does not exist" in msg.lower():
-                st.error(
-                    "Tabela ainda não criada. Rode o SQL em "
-                    "SIGCF_RH/sql/001_rh_justificativa_faltas.sql no Supabase."
-                )
-            else:
-                st.error(f"Erro ao salvar: {e}")
+        if not lider:
+            st.warning("Informe o líder do setor.")
+        elif not referente:
+            st.warning("Informe o referente de realimentação.")
+        elif not tipo_fb:
+            st.warning("Selecione o tipo de feedback.")
+        elif not opcao_registro:
+            st.warning("Selecione a opção de registro.")
+        elif not descricao.strip():
+            st.warning("Descreva o feedback.")
+        else:
+            registro = {
+                "responsavel": responsavel,
+                "nome_lider_setor": lider,
+                "referente": referente,
+                "setor": setor_fb,
+                "tipo_feedback": tipo_fb,
+                "opcao_registro": opcao_registro,
+                "descricao": descricao.strip(),
+                "visita_rh": visita_rh,
+            }
+            try:
+                sb.table(TABELA_FEEDBACK).insert(registro).execute()
+                st.success(f"Feedback registrado — {referente} · {tipo_fb}")
+                st.cache_data.clear()
+                st.rerun()
+            except Exception as e:
+                msg = str(e)
+                if "rh_feedback_lideranca" in msg and "does not exist" in msg.lower():
+                    st.error("Tabela ainda não criada. Rode sql/011_rh_feedback_lideranca.sql no Supabase.")
+                else:
+                    st.error(f"Erro ao salvar: {e}")
 
 st.divider()
 st.markdown(
